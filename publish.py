@@ -1,56 +1,803 @@
 #!/usr/bin/env python3
 """
-归灯序·黑灯工厂 - 博客自动发布脚本
-读取扫描报告 -> 生成图文博客 -> 推送到Gitee Pages
+归灯序·黑灯工厂 - 博客自动发布脚本 v2.0
+新结构：老兵判断 → 30秒看懂 → 能不能搞 → 图表 → 怎么上手 → 坑在哪 → 我的态度
 """
-
-import json
-import os
-import sys
-import subprocess
-from datetime import datetime, timedelta
+import json, os, sys, base64, math, textwrap
+from datetime import datetime
 from pathlib import Path
-import textwrap
-import math
 
 # ============================================================
 # 配置
 # ============================================================
 BLOG_DIR = Path(__file__).parent
-REPORTS_DIR = BLOG_DIR.parent / "reports"
-DATA_DIR = BLOG_DIR.parent / "data"
 POSTS_DIR = BLOG_DIR / "posts"
 ASSETS_DIR = BLOG_DIR / "assets"
+REPORTS_DIR = BLOG_DIR.parent / "reports"
 
 GITEE_TOKEN = "2a1bf843c7e5da216750893e8155d619"
 GITEE_USER = "hdmhdm100"
 GITEE_REPO = "guidenxu-blog"
-GITEE_REMOTE = f"https://{GITEE_USER}:{GITEE_TOKEN}@gitee.com/{GITEE_USER}/{GITEE_REPO}.git"
 
-# 品牌信息
 BRAND = "归灯序"
 TAGLINE = "帮散户避开坑，找到真机会"
-FACTORY = "黑灯工厂自动化出品"
 
-# 颜色体系 (亮色清爽)
-COLORS = {
-    "bg": "#ffffff",
-    "card_bg": "#f8f9fa",
-    "card_border": "#e9ecef",
-    "text": "#212529",
-    "text_secondary": "#6c757d",
-    "text_muted": "#adb5bd",
-    "accent": "#f59e0b",      # 琥珀/橙色点缀
-    "accent_light": "#fff3cd",
-    "success": "#10b981",     # 绿色
-    "danger": "#ef4444",      # 红色警告
-    "info": "#3b82f6",        # 蓝色
-    "chart_colors": ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4"],
-    "score_high": "#10b981",
-    "score_mid": "#f59e0b",
-    "score_low": "#ef4444",
+# 颜色体系
+C = {
+    "green": "#10b981", "green_light": "#d1fae5", "green_bg": "#ecfdf5",
+    "orange": "#f59e0b", "orange_light": "#fff3cd",
+    "red": "#ef4444", "red_light": "#fee2e2", "red_bg": "#fff5f5",
+    "blue": "#3b82f6", "blue_light": "#dbeafe",
+    "gray": "#6c757d", "gray_light": "#e9ecef", "gray_bg": "#f8f9fa",
+    "text": "#1a1a2e", "text_soft": "#4a4a6a", "white": "#ffffff",
 }
 
+
+# ============================================================
+# 图表引擎
+# ============================================================
+
+def chart_earnings_bar(project):
+    """收益预估条 - 适合有明确收益范围的项目"""
+    lo = project.get("earn_low", 0)
+    hi = project.get("earn_high", 100)
+    unit = project.get("earn_unit", "元")
+    period = project.get("earn_period", "月")
+
+    w, h = 520, 90
+    bar_max = max(hi * 1.15, 100)
+    lo_pct = lo / bar_max
+    hi_pct = hi / bar_max
+    bar_x = 120
+    bar_w = w - bar_x - 60
+
+    svg = f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" class="chart-earnings">'
+    svg += f'<rect x="0" y="0" width="{w}" height="{h}" rx="12" fill="{C["gray_bg"]}"/>'
+
+    # 低端标签
+    svg += f'<text x="{bar_x - 12}" y="32" text-anchor="end" font-size="13" fill="{C["gray"]}" font-family="sans-serif">{unit}{lo}</text>'
+    # 高端标签
+    svg += f'<text x="{bar_x + bar_w + 8}" y="32" font-size="13" fill="{C["gray"]}" font-family="sans-serif">{unit}{hi}</text>'
+
+    # 范围条
+    y_bar = 42
+    bar_h = 14
+    x1 = bar_x + bar_w * lo_pct
+    x2 = bar_x + bar_w * hi_pct
+    svg += f'<rect x="{x1:.0f}" y="{y_bar}" width="{x2 - x1:.0f}" height="{bar_h}" rx="7" fill="{C["green"]}" opacity="0.85"/>'
+
+    # 最小/最大端点
+    for x_val, label in [(x1, "保守估计"), (x2, "乐观估计")]:
+        svg += f'<circle cx="{x_val:.0f}" cy="{y_bar + bar_h/2:.0f}" r="6" fill="{C["white"]}" stroke="{C["green"]}" stroke-width="2.5"/>'
+        anchor = "end" if x_val > bar_x + bar_w * 0.7 else "start"
+        svg += f'<text x="{x_val:.0f}" y="{y_bar + bar_h + 28}" text-anchor="{anchor}" font-size="11" fill="{C["gray"]}" font-family="sans-serif">{label} {unit}{lo if x_val == x1 else hi}/{period}</text>'
+
+    # 月收益标签
+    svg += f'<text x="{bar_x + bar_w / 2:.0f}" y="18" text-anchor="middle" font-size="14" font-weight="600" fill="{C["text"]}" font-family="sans-serif">预计收益范围</text>'
+    svg += "</svg>"
+    return svg
+
+
+def chart_threshold_ladder(project):
+    """门槛阶梯 - 直观显示项目难度"""
+    threshold = project.get("threshold", "零门槛")
+    levels = [
+        ("零门槛", "不需要技术\n不需要钱\n能上网就行", 0),
+        ("需要技能", "要学点东西\n几天能上手", 1),
+        ("需要资金", "得投点钱\n几百到几千", 2),
+        ("需要身份", "有特定条件\n不是人人都行", 3),
+    ]
+    current_level = {"零门槛": 0, "需要技能": 1, "需要资金": 2, "需要身份": 3}.get(threshold, 0)
+
+    w, h = 520, 160
+    step_w = 110
+    gap = 12
+    start_x = (w - (step_w * 4 + gap * 3)) // 2
+
+    svg = f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" class="chart-ladder">'
+    svg += f'<rect x="0" y="0" width="{w}" height="{h}" rx="12" fill="{C["gray_bg"]}"/>'
+    svg += f'<text x="{w/2:.0f}" y="24" text-anchor="middle" font-size="14" font-weight="600" fill="{C["text"]}" font-family="sans-serif">门槛分级</text>'
+
+    for i, (name, desc, lv) in enumerate(levels):
+        x = start_x + i * (step_w + gap)
+        y_top = 48
+        step_h = 95
+        is_active = (lv <= current_level)
+
+        if lv == current_level:
+            fill = C["green"]
+            text_c = C["white"]
+            desc_c = C["white"]
+        elif is_active:
+            fill = C["green_light"]
+            text_c = C["green"]
+            desc_c = C["gray"]
+        else:
+            fill = C["gray_light"]
+            text_c = C["gray"]
+            desc_c = C["gray"]
+
+        svg += f'<rect x="{x}" y="{y_top}" width="{step_w}" height="{step_h}" rx="10" fill="{fill}"/>'
+        svg += f'<text x="{x + step_w/2:.0f}" y="{y_top + 28}" text-anchor="middle" font-size="15" font-weight="700" fill="{text_c}" font-family="sans-serif">{name}</text>'
+
+        # 当前级别的指示箭头
+        if lv == current_level:
+            svg += f'<polygon points="{x + step_w/2:.0f},{y_top + step_h - 10} {x + step_w/2 - 8:.0f},{y_top + step_h} {x + step_w/2 + 8:.0f},{y_top + step_h}" fill="{C["green"]}"/>'
+            svg += f'<text x="{x + step_w/2:.0f}" y="{y_top + step_h + 16}" text-anchor="middle" font-size="10" font-weight="600" fill="{C["green"]}" font-family="sans-serif">当前项目</text>'
+
+        # 描述行
+        lines = desc.split('\n')
+        for j, line in enumerate(lines):
+            svg += f'<text x="{x + step_w/2:.0f}" y="{y_top + 52 + j*16}" text-anchor="middle" font-size="11" fill="{desc_c}" font-family="sans-serif">{line}</text>'
+
+    svg += "</svg>"
+    return svg
+
+
+def chart_timeline(project):
+    """时间线 - 适合短期机会/套利类"""
+    events = project.get("timeline", [
+        ("今天", "开始操作"),
+        ("1周内", "完成设置"),
+        ("1个月", "看到收益"),
+    ])
+    w, h = 520, 130
+    start_x = 80
+    line_y = 55
+
+    svg = f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" class="chart-timeline">'
+    svg += f'<rect x="0" y="0" width="{w}" height="{h}" rx="12" fill="{C["gray_bg"]}"/>'
+    svg += f'<text x="{w/2:.0f}" y="22" text-anchor="middle" font-size="14" font-weight="600" fill="{C["text"]}" font-family="sans-serif">操作时间线</text>'
+
+    # 主线
+    svg += f'<line x1="{start_x}" y1="{line_y}" x2="{w - 30}" y2="{line_y}" stroke="{C["gray_light"]}" stroke-width="3" stroke-linecap="round"/>'
+
+    n = len(events)
+    for i, (time_label, event_label) in enumerate(events):
+        x = start_x + (w - start_x - 30) * i / max(n - 1, 1)
+        color = C["green"] if i == 0 else (C["blue"] if i == n - 1 else C["orange"])
+        svg += f'<circle cx="{x:.0f}" cy="{line_y}" r="8" fill="{C["white"]}" stroke="{color}" stroke-width="3"/>'
+        svg += f'<circle cx="{x:.0f}" cy="{line_y}" r="3" fill="{color}"/>'
+
+        # 时间标签（上方）
+        svg += f'<text x="{x:.0f}" y="{line_y - 18}" text-anchor="middle" font-size="12" font-weight="700" fill="{color}" font-family="sans-serif">{time_label}</text>'
+        # 事件标签（下方）
+        svg += f'<text x="{x:.0f}" y="{line_y + 30}" text-anchor="middle" font-size="13" fill="{C["text_soft"]}" font-family="sans-serif">{event_label}</text>'
+
+    svg += "</svg>"
+    return svg
+
+
+def chart_radar(project):
+    """雷达图 - 仅用于需要多维对比的项目"""
+    dims = [
+        ("可行性", 25), ("竞争度", 20), ("成本", 15),
+        ("回本", 15), ("扩展", 10), ("自动化", 15),
+    ]
+    scores = project.get("scores_detail", {})
+    keys = ["feasibility", "competition", "cost", "time_to_return", "scalability", "automation"]
+    vals = []
+    for (name, w), k in zip(dims, keys):
+        v = scores.get(k, 7)
+        vals.append((name, float(v)))
+
+    size = 260
+    cx, cy, r = size // 2, size // 2, size // 2 - 45
+    n = len(vals)
+
+    svg = f'<svg viewBox="0 0 {size} {size}" xmlns="http://www.w3.org/2000/svg">'
+    # 网格
+    for level in range(1, 6):
+        lr = r * level / 5
+        pts = []
+        for i in range(n):
+            a = -math.pi / 2 + 2 * math.pi * i / n
+            pts.append(f"{cx + lr * math.cos(a):.1f},{cy + lr * math.sin(a):.1f}")
+        svg += f'<polygon points="{" ".join(pts)}" fill="none" stroke="{C["gray_light"]}" stroke-width="0.8"/>'
+
+    # 轴线
+    for i in range(n):
+        a = -math.pi / 2 + 2 * math.pi * i / n
+        svg += f'<line x1="{cx}" y1="{cy}" x2="{cx + r * math.cos(a):.1f}" y2="{cy + r * math.sin(a):.1f}" stroke="{C["gray_light"]}" stroke-width="0.8"/>'
+
+    # 数据区
+    data_pts = []
+    for i, (_, sv) in enumerate(vals):
+        a = -math.pi / 2 + 2 * math.pi * i / n
+        d = r * sv / 10
+        data_pts.append(f"{cx + d * math.cos(a):.1f},{cy + d * math.sin(a):.1f}")
+    svg += f'<polygon points="{" ".join(data_pts)}" fill="rgba(16,185,129,0.12)" stroke="{C["green"]}" stroke-width="2"/>'
+
+    # 数据点
+    for i, (_, sv) in enumerate(vals):
+        a = -math.pi / 2 + 2 * math.pi * i / n
+        d = r * sv / 10
+        x, y = cx + d * math.cos(a), cy + d * math.sin(a)
+        svg += f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.5" fill="{C["green"]}"/>'
+
+    # 标签
+    for i, (name, _) in enumerate(vals):
+        a = -math.pi / 2 + 2 * math.pi * i / n
+        lx = cx + (r + 32) * math.cos(a)
+        ly = cy + (r + 32) * math.sin(a)
+        svg += f'<text x="{lx:.1f}" y="{ly:.1f}" text-anchor="middle" font-size="10.5" fill="{C["gray"]}" font-family="sans-serif">{name}</text>'
+
+    # 中心分数
+    avg = sum(v[1] for v in vals) / n
+    svg += f'<text x="{cx}" y="{cy}" text-anchor="middle" dominant-baseline="central" font-size="26" font-weight="800" fill="{C["green"]}" font-family="sans-serif">{avg:.1f}</text>'
+    svg += f'<text x="{cx}" y="{cy + 20}" text-anchor="middle" font-size="10" fill="{C["gray"]}" font-family="sans-serif">综合</text>'
+    svg += "</svg>"
+    return svg
+
+
+def pick_chart(project):
+    """根据项目类型自动选择合适的图表"""
+    chart_type = project.get("chart_type", "auto")
+    if chart_type == "auto":
+        threshold = project.get("threshold", "零门槛")
+        category = project.get("category", "")
+        # 有收益范围→收益条
+        if project.get("earn_low") and project.get("earn_high"):
+            chart_type = "earnings"
+        # 需要多维对比→雷达
+        elif threshold in ("需要技能", "需要资金"):
+            chart_type = "radar"
+        # 套利/短期→时间线
+        elif "套利" in category or "短期" in category:
+            chart_type = "timeline"
+        # 默认→门槛阶梯
+        else:
+            chart_type = "ladder"
+
+    if chart_type == "earnings":
+        return chart_earnings_bar(project)
+    elif chart_type == "ladder":
+        return chart_threshold_ladder(project)
+    elif chart_type == "timeline":
+        return chart_timeline(project)
+    else:
+        return chart_radar(project)
+
+
+# ============================================================
+# 内容构建
+# ============================================================
+
+def build_section_verdict(project):
+    """老兵判断 - 开门见山，直接下判断"""
+    verdict = project.get("verdict", "")
+    timing = project.get("timing", "")
+    if not verdict:
+        return ""
+    timing_label = {"红利期": "红利期", "稳健期": "稳健期", "尾声": "接近尾声", "持续": "持续有效"}.get(timing, "")
+    timing_badge = ""
+    if timing_label:
+        color = C["green"] if timing in ("红利期", "持续") else (C["orange"] if timing == "稳健期" else C["red"])
+        timing_badge = f'<span class="timing-badge" style="background:{color}15;color:{color}">{timing_label}</span>'
+    return f'''
+    <div class="sec-verdict">
+        <div class="verdict-inner">
+            <span class="verdict-icon">&#9889;</span>
+            <div class="verdict-content">
+                <span class="verdict-text">{verdict}</span>
+                {timing_badge}
+            </div>
+        </div>
+    </div>'''
+
+
+def build_section_quick(project):
+    """30秒看懂"""
+    quick = project.get("quick_view", project.get("summary", ""))
+    if not quick:
+        return ""
+    return f'''
+    <div class="sec-quick">
+        <div class="sec-label">30秒看懂</div>
+        <p class="quick-text">{quick}</p>
+    </div>'''
+
+
+def build_section_cando(project):
+    """能不能搞 - 明确划线"""
+    suitable = project.get("suitable", [])
+    not_suitable = project.get("not_suitable", [])
+
+    if isinstance(suitable, str):
+        # 从旧数据格式转换
+        if "有海外" in suitable or "海外身份" in suitable:
+            suitable = []
+            not_suitable = ["没有海外身份或银行账户", "信用记录不能太差"]
+        else:
+            suitable = [suitable]
+
+    if isinstance(not_suitable, str):
+        not_suitable = [not_suitable]
+
+    return f'''
+    <div class="sec-cando">
+        <div class="sec-label">能不能搞</div>
+        <div class="cando-grid">
+            <div class="cando-col cando-yes">
+                <div class="cando-col-title">&#9989; 你可以，如果你——</div>
+                <ul>
+                    {"".join(f'<li>{s}</li>' for s in suitable) if suitable else '<li>大多数人都可以试试</li>'}
+                </ul>
+            </div>
+            <div class="cando-col cando-no">
+                <div class="cando-col-title">&#10060; 先别碰，如果你——</div>
+                <ul>
+                    {"".join(f'<li>{s}</li>' for s in not_suitable) if not_suitable else '<li>暂无明确限制</li>'}
+                </ul>
+            </div>
+        </div>
+    </div>'''
+
+
+def build_section_chart(project):
+    """图表区"""
+    chart_svg = pick_chart(project)
+    return f'''
+    <div class="sec-chart">
+        {chart_svg}
+    </div>'''
+
+
+def build_section_howto(project):
+    """怎么上手 - 关键节点，不是百科"""
+    steps = project.get("how_to", project.get("steps", []))
+    if not steps:
+        return ""
+    items = []
+    for i, s in enumerate(steps[:4], 1):
+        items.append(f'''
+        <div class="howto-step">
+            <span class="howto-num">{i:02d}</span>
+            <p class="howto-text">{s}</p>
+        </div>''')
+    return f'''
+    <div class="sec-howto">
+        <div class="sec-label">怎么上手</div>
+        <div class="howto-list">
+            {"".join(items)}
+        </div>
+    </div>'''
+
+
+def build_section_traps(project):
+    """坑在哪 - 真正的坑，不是官方风险"""
+    traps = project.get("traps", project.get("risk", ""))
+    if not traps:
+        return ""
+    if isinstance(traps, str):
+        traps = [traps]
+    items = "".join(f'<li>{t}</li>' for t in traps)
+    return f'''
+    <div class="sec-traps">
+        <div class="sec-label">&#9888;&#65039; 坑在哪</div>
+        <ul class="trap-list">{items}</ul>
+    </div>'''
+
+
+def build_section_attitude(project):
+    """我的态度 - 一句话，敢下结论"""
+    attitude = project.get("attitude", "")
+    if not attitude:
+        return ""
+    return f'''
+    <div class="sec-attitude">
+        <div class="attitude-bar">
+            <span class="attitude-label">我的态度：</span>
+            <span class="attitude-text">{attitude}</span>
+        </div>
+    </div>'''
+
+
+# ============================================================
+# HTML 模板
+# ============================================================
+
+def build_post_html(projects, date_str, hook_line=""):
+    """构建单日博客HTML"""
+    today = datetime.now()
+    date_display = f"{today.year}年{today.month}月{today.day}日"
+
+    if not hook_line:
+        hook_line = f"今天看了{len(projects)}个项目，选了{sum(1 for p in projects if p.get('score', 0) >= 7)}个值得聊的。"
+
+    cards = []
+    for p in projects:
+        title = p.get("title", "")
+        category = p.get("category", "")
+        threshold = p.get("threshold", "零门槛")
+        score = p.get("score", 7)
+
+        # 分数颜色
+        sc = C["green"] if score >= 7.5 else (C["orange"] if score >= 6 else C["red"])
+
+        card = f'''
+        <article class="project-card">
+            <div class="pc-top">
+                <div class="pc-badges">
+                    <span class="badge-category">{category}</span>
+                    <span class="badge-threshold threshold-{threshold.replace("零门槛","zero").replace("需要技能","skill").replace("需要资金","capital").replace("需要身份","identity")}">{threshold}</span>
+                </div>
+                <div class="pc-score-box">
+                    <span class="pc-score-num" style="color:{sc}">{score:.1f}</span>
+                    <span class="pc-score-unit">分</span>
+                </div>
+            </div>
+
+            <h2 class="pc-title">{title}</h2>
+
+            {build_section_verdict(p)}
+            {build_section_quick(p)}
+            {build_section_cando(p)}
+            {build_section_chart(p)}
+            {build_section_howto(p)}
+            {build_section_traps(p)}
+            {build_section_attitude(p)}
+        </article>'''
+        cards.append(card)
+
+    html = f'''<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{BRAND} - {date_display} 全网赚钱机会深度扫描">
+    <title>{BRAND} · {date_display} | 帮散户找到真机会</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-row">
+            <div>
+                <h1 class="brand">{BRAND}</h1>
+                <p class="tagline">{TAGLINE}</p>
+            </div>
+            <span class="date-badge">{date_display}</span>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="day-hook">
+            <p>{hook_line}</p>
+        </section>
+
+        <section class="projects-list">
+            {"".join(cards)}
+        </section>
+
+        <section class="day-closing">
+            <p>以上。这些都是扫描器从全网筛出来的项目，我挑了几个值得说的。</p>
+            <p>记住：看分析是为了自己做判断，不是别人说行你就冲。尤其是要花钱的，多用几秒钟想想。</p>
+        </section>
+
+        <section class="disclaimer">
+            <p>黑灯工厂自动化出品 · 老兵人工把关 · 仅供参考不构成投资建议</p>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>归灯序 &mdash; 帮散户避开坑，找到真机会</p>
+    </footer>
+</body>
+</html>'''
+
+    return html
+
+
+def build_index_html():
+    """首页"""
+    posts = sorted(POSTS_DIR.glob("*.html"), reverse=True)
+    now = datetime.now()
+
+    items = "".join(
+        f'<li><a href="posts/{p.name}">{p.stem.replace("post_", "").replace("-", "年", 1).replace("-", "月")}日</a></li>'
+        for p in posts[:30]
+    ) if posts else '<li class="empty">内容即将上线</li>'
+
+    return f'''<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{BRAND} - 全网自动扫描，帮散户找到真机会">
+    <title>{BRAND} · 黑灯工厂</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <header class="site-header-index">
+        <div class="container header-center">
+            <h1 class="brand-index">{BRAND}</h1>
+            <p class="tagline-index">{TAGLINE}</p>
+            <p class="factory-desc">全自动扫描工厂 &middot; 关灯也能自己转</p>
+        </div>
+    </header>
+    <main class="container">
+        <section class="intro">
+            <p>每天自动扫描全网赚钱机会——不是教你发财，是帮你看清楚。</p>
+            <p>12个领域、100+关键词、30+平台，AI采集+老兵把关。</p>
+        </section>
+        <section class="archive">
+            <h2>往期内容</h2>
+            <ul class="post-list">{items}</ul>
+        </section>
+    </main>
+    <footer class="site-footer"><p>归灯序 &mdash; 不保证赚钱，但保证说实话</p></footer>
+</body>
+</html>'''
+
+
+# ============================================================
+# CSS
+# ============================================================
+
+def write_css():
+    css = '''/* 归灯序 · 博客样式 v2.0 · 清爽克制 */
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+    --green:#10b981;--green-light:#d1fae5;--green-bg:#ecfdf5;
+    --orange:#f59e0b;--orange-light:#fff3cd;
+    --red:#ef4444;--red-light:#fee2e2;--red-bg:#fff5f5;
+    --blue:#3b82f6;--blue-light:#dbeafe;
+    --gray:#6c757d;--gray-light:#e9ecef;--gray-bg:#f8f9fa;
+    --text:#1a1a2e;--text-soft:#4a4a6a;--text-muted:#8890a0;
+    --radius:14px;--radius-sm:8px;
+    --shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+
+body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+    background:#f2f3f7;color:var(--text);line-height:1.75;font-size:16px;
+}
+.container{max-width:780px;margin:0 auto;padding:0 20px}
+
+/* Header */
+.site-header{
+    background:rgba(255,255,255,0.94);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--gray-light);padding:16px 0;
+    position:sticky;top:0;z-index:100;
+}
+.header-row{display:flex;justify-content:space-between;align-items:center}
+.brand{font-size:20px;font-weight:700;color:var(--text);letter-spacing:.5px}
+.tagline{font-size:12px;color:var(--gray);margin-top:1px}
+.date-badge{background:var(--orange-light);color:#92400e;padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600}
+
+/* Index Header */
+.site-header-index{padding:60px 0 36px;background:linear-gradient(135deg,#fff 0%,#fef9e7 100%);border:none}
+.header-center{text-align:center}
+.brand-index{font-size:40px;font-weight:800;color:var(--text);margin-bottom:6px}
+.tagline-index{font-size:17px;color:var(--text-soft)}
+.factory-desc{font-size:14px;color:var(--text-muted);margin-top:8px}
+.intro{text-align:center;background:#fff;border-radius:var(--radius);padding:32px;margin:-16px 0 28px;box-shadow:var(--shadow)}
+.intro p{font-size:15px;color:var(--text-soft);margin:4px 0}
+.archive{background:#fff;border-radius:var(--radius);padding:28px 32px;box-shadow:var(--shadow);margin-bottom:32px}
+.archive h2{font-size:18px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--gray-light)}
+.post-list{list-style:none}
+.post-list li{padding:12px 0;border-bottom:1px solid var(--gray-light)}
+.post-list li:last-child{border:none}
+.post-list a{color:var(--text);text-decoration:none;font-size:15px;padding:6px 10px;border-radius:var(--radius-sm);display:block;transition:background .15s}
+.post-list a:hover{background:var(--gray-bg);color:var(--orange)}
+.post-list .empty{color:var(--text-muted);text-align:center;padding:20px}
+
+/* Daily Hook */
+.day-hook{background:var(--green);color:#fff;padding:18px 24px;border-radius:var(--radius);margin:24px 0 20px;font-size:15px;line-height:1.7;box-shadow:0 4px 16px rgba(16,185,129,0.18)}
+.day-hook p{margin:0}
+
+/* Project Card */
+.project-card{
+    background:#fff;border-radius:var(--radius);padding:32px;margin-bottom:24px;
+    box-shadow:var(--shadow);transition:box-shadow .2s,border-color .2s;
+    border:1px solid transparent;
+}
+.project-card:hover{box-shadow:0 6px 24px rgba(0,0,0,0.10);border-color:var(--gray-light)}
+
+/* Top area */
+.pc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.pc-badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge-category{font-size:12px;color:var(--blue);background:var(--blue-light);padding:3px 12px;border-radius:12px;font-weight:500}
+.badge-threshold{font-size:12px;padding:3px 12px;border-radius:12px;font-weight:500}
+.threshold-zero{background:var(--green-light);color:#065f46}
+.threshold-skill{background:var(--orange-light);color:#92400e}
+.threshold-capital{background:var(--red-light);color:#991b1b}
+.threshold-identity{background:var(--red-light);color:#991b1b}
+
+.pc-score-box{display:flex;align-items:baseline;gap:2px}
+.pc-score-num{font-size:40px;font-weight:800;line-height:1}
+.pc-score-unit{font-size:14px;color:var(--gray)}
+
+.pc-title{font-size:21px;font-weight:700;color:var(--text);margin-bottom:18px;line-height:1.4}
+
+/* Section Common */
+.sec-label{font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.sec-label::before{content:'';display:inline-block;width:4px;height:14px;background:var(--green);border-radius:2px}
+
+/* Verdict */
+.sec-verdict{margin-bottom:18px}
+.verdict-inner{display:flex;gap:12px;background:var(--green-bg);padding:14px 18px;border-radius:var(--radius-sm);border-left:3px solid var(--green);align-items:flex-start}
+.verdict-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.verdict-content{flex:1;display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.verdict-text{font-size:15px;font-weight:600;color:#065f46;line-height:1.6}
+.timing-badge{font-size:11px;padding:2px 10px;border-radius:10px;font-weight:600;white-space:nowrap;flex-shrink:0}
+
+/* Quick */
+.sec-quick{margin-bottom:18px}
+.quick-text{font-size:15px;color:var(--text-soft);line-height:1.8}
+
+/* Can/Can't Do */
+.sec-cando{margin-bottom:20px}
+.cando-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cando-col{padding:16px 18px;border-radius:var(--radius-sm);font-size:14px}
+.cando-yes{background:var(--green-bg)}
+.cando-no{background:var(--red-bg)}
+.cando-col-title{font-weight:700;margin-bottom:8px;font-size:13px}
+.cando-col ul{list-style:none;padding:0}
+.cando-col li{padding:3px 0 3px 12px;position:relative;line-height:1.7;font-size:13px}
+.cando-col li::before{content:'\u2022';position:absolute;left:0;color:var(--gray)}
+.cando-yes li::before{color:var(--green)}
+.cando-no li::before{color:var(--red)}
+
+/* Chart */
+.sec-chart{margin-bottom:20px;text-align:center}
+.sec-chart svg{max-width:100%;height:auto}
+
+/* How-to */
+.sec-howto{margin-bottom:20px}
+.howto-list{display:flex;flex-direction:column;gap:10px}
+.howto-step{display:flex;gap:14px;align-items:flex-start}
+.howto-num{flex-shrink:0;width:32px;height:32px;background:var(--gray-bg);color:var(--text);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:monospace}
+.howto-text{font-size:14px;color:var(--text-soft);line-height:2.2;padding-top:3px}
+
+/* Traps */
+.sec-traps{margin-bottom:20px}
+.trap-list{list-style:none;padding:0}
+.trap-list li{padding:8px 12px 8px 22px;position:relative;line-height:1.7;font-size:14px;color:var(--text-soft)}
+.trap-list li::before{content:'\u26A0';position:absolute;left:0;top:8px;font-size:12px}
+
+/* Attitude */
+.sec-attitude{margin-top:8px}
+.attitude-bar{display:flex;gap:8px;align-items:center;padding:14px 18px;background:var(--orange-light);border-radius:var(--radius-sm)}
+.attitude-label{font-weight:700;font-size:13px;color:#92400e;white-space:nowrap}
+.attitude-text{font-size:14px;color:#92400e;line-height:1.6}
+
+/* Closing */
+.day-closing{text-align:center;padding:20px 0;font-size:14px;color:var(--text-muted);line-height:1.8}
+.disclaimer{text-align:center;padding:16px 0;font-size:12px;color:var(--text-muted);border-top:1px solid var(--gray-light);margin-top:8px}
+
+/* Footer */
+.site-footer{text-align:center;padding:20px 0;font-size:13px;color:var(--text-muted)}
+
+@media(max-width:640px){
+    .container{padding:0 14px}
+    .project-card{padding:22px 18px}
+    .cando-grid{grid-template-columns:1fr}
+    .pc-score-num{font-size:32px}
+    .brand-index{font-size:30px}
+}
+'''
+    (ASSETS_DIR / "style.css").write_text(css, encoding="utf-8")
+
+
+# ============================================================
+# 演示数据
+# ============================================================
+
+def demo_projects():
+    return [
+        {
+            "title": "上门喂猫/遛狗 · 宠物托管",
+            "category": "零门槛 · 本地服务",
+            "score": 8.3,
+            "timing": "持续",
+            "threshold": "零门槛",
+            "chart_type": "earnings",
+            "earn_low": 800,
+            "earn_high": 4000,
+            "earn_unit": "¥",
+            "earn_period": "月",
+            "verdict": "这不是什么新概念，但今年一线城市的宠物托管需求涨了40%以上。不需要证书、不需要店面、不需要投钱。唯一的门槛是你得不怕猫狗。",
+            "quick_view": "在小红书、闲鱼、小区群发布宠物托管服务，按次收费30-80元。节假日需求暴增。一个人最多同时接3-4单，时间自由，比送外卖舒服。",
+            "suitable": ["喜欢猫狗，不害怕不抵触", "家里有条件临时接宠物", "在人口密集的小区或城市", "有耐心，不是急脾气"],
+            "not_suitable": ["对宠物毛发过敏", "租房且合同不让养", "经常出差不在家", "指望一个月就爆单"],
+            "how_to": [
+                "先免费帮邻居/朋友托管一次，积累口碑和好评",
+                "在小红书发「上门喂猫日记」，实拍记录，不是广告是真实生活",
+                "闲鱼和小区群挂信息：明确服务范围、价格、时间",
+                "节假日提前1个月开始接单——那是真正的旺季"
+            ],
+            "traps": [
+                "嘴上说喜欢猫狗和真的每天铲屎是两回事，先试一次免费的再决定",
+                "有些人会把你当「宠物酒店」要求24小时陪护，说清楚你的服务边界",
+                "遇到咬人/有攻击性的宠物，第一次上门一定要有主人在场"
+            ],
+            "attitude": "最适合被AI替代下来的普通人——宠物不会找AI托管。如果你住在大城市，周末愿意出个门，这比送外卖轻松得多。"
+        },
+        {
+            "title": "Notion模板 · 数字产品销售",
+            "category": "数字产品 · 复利收入",
+            "score": 7.8,
+            "timing": "红利期",
+            "threshold": "需要技能",
+            "chart_type": "ladder",
+            "earn_low": 200,
+            "earn_high": 3000,
+            "earn_unit": "¥",
+            "earn_period": "月",
+            "verdict": "做一个模板，卖一百次、一千次。这是真正的「睡后收入」。但前提是你得理解用户到底需要什么——不是你会用Notion就行，是你能把别人的需求翻译成一个好用的工具。",
+            "quick_view": "设计一个Notion模板（记账本、项目管理、习惯追踪等），上传到Gumroad或Notion官方市场。一次制作，持续销售。一个好模板可以卖29-99元。",
+            "suitable": ["用过Notion或类似工具，不陌生", "有一点审美和排版意识", "愿意花2-3天研究别人的模板", "有耐心——第一批收入来得慢"],
+            "not_suitable": ["完全没碰过Notion，也不想学", "指望做出来立刻爆单", "没有任何耐心打磨产品"],
+            "how_to": [
+                "去Notion市场和Gumroad上翻100个热门模板，看看什么类型最好卖",
+                "选一个你最熟悉的领域（记账/学习/工作流），做一个比市面上更好的模板",
+                "录一段2分钟的使用视频，比写1000字描述有用得多"
+            ],
+            "traps": [
+                "第一个模板大概率卖不动，不是你的错——是没人知道你的存在，先免费送几个换评价",
+                "别做「万能模板」，做得太全反而没人用。做一个痛点就够了",
+                "Gumroad抽成10%，定价的时候把这个算进去"
+            ],
+            "attitude": "如果你本来就熟悉某个领域的流程，把这个流程变成模板卖钱，这是最干净的变现方式。不是割韭菜，是你把自己搞明白的东西产品化了。"
+        },
+        {
+            "title": "朋友圈/社交媒体·AI图片接单",
+            "category": "AI工具 · 本地变现",
+            "score": 7.5,
+            "timing": "红利期",
+            "threshold": "零门槛",
+            "chart_type": "ladder",
+            "verdict": "大部分人只知道AI能聊天，不知道AI能直接帮你赚钱。朋友圈里每天有人需要P图、改证件照、做活动海报。你用AI几秒钟搞定，收个二三十块，双方都高兴。",
+            "quick_view": "用即梦/通义万相等国产AI工具（免费），帮身边的人做图片处理：证件照换底色、老照片修复、活动海报、朋友圈封面。在朋友圈和小区群发几个案例，订单就来了。",
+            "suitable": ["会用手机的人都能做", "朋友圈有一定人脉", "不怕被朋友说「你怎么干这个」", "有耐心学AI工具（半天够了）"],
+            "not_suitable": ["觉得自己做这个是「掉价」", "完全不愿意发朋友圈展示", "对电脑操作完全零基础"],
+            "how_to": [
+                "花半天学会即梦/通义万相的基本操作（免费的，别花钱）",
+                "先免费帮5个朋友做东西，让他们发朋友圈带上你的名字",
+                "定个价格：简单修图10-20元，定制海报50-100元"
+            ],
+            "traps": [
+                "免费AI工具有每日使用次数限制，别一天接太多单发现做不完",
+                "有些客户会让你「修到满意为止」，提前说清楚免费修改几次",
+                "AI生成的内容可能有版权问题，商用的时候注意甄别"
+            ],
+            "attitude": "这可能是所有项目里启动成本最低的一个。你缺的不是技术，是敢在朋友圈说「我能做这个」的勇气。"
+        },
+        {
+            "title": "小红书 · 技能教程号",
+            "category": "内容变现 · 长期积累",
+            "score": 7.2,
+            "timing": "稳健期",
+            "threshold": "需要技能",
+            "earn_low": 500,
+            "earn_high": 5000,
+            "earn_unit": "¥",
+            "earn_period": "月",
+            "verdict": "你会的东西一定有人想学。不用是专家，你只需要比想学的人多懂一步。小红书现在是知识类内容增长最快的平台。但注意——第一到第三个月可能颗粒无收。",
+            "quick_view": "选一个你擅长的技能（Excel、剪视频、做手帐、育儿经验），在小红书发教程笔记，每条讲一个具体的小技巧。积累粉丝后通过接广告、卖课程、一对一咨询变现。",
+            "suitable": ["有一项拿得出手的技能，哪怕很小", "表达不磕巴，写东西或拍视频不反感", "能接受3-6个月可能没有收入", "不是追求「快速赚钱」的人"],
+            "not_suitable": ["没什么精通的技能也不想学", "文字表达很差且不愿意练", "需要马上就来钱", "怕被人说「你做这个有什么用」"],
+            "how_to": [
+                "先想清楚：你会的什么东西，别人不会但想学？",
+                "拆成50个小知识点，每个发一篇小红书笔记",
+                "头30篇不要想变现，专注把内容做好——数据会告诉你什么方向对",
+            ],
+            "traps": [
+                "别一上来就卖课——粉丝都没几个，没人买。先免费输出价值",
+                "小红书限流很玄学，一篇笔记没流量不代表方向不对，继续发",
+                "想清楚你是在做「知识分享」还是「割韭菜」，前者才能长久"
+            ],
+            "attitude": "不是最快的路，但是最稳的路。如果你确实有技能且愿意花时间和人分享，这个方向能做很久。"
+        }
+    ]
+
+
+# ============================================================
+# 发布
+# ============================================================
 
 def ensure_dirs():
     POSTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -58,970 +805,85 @@ def ensure_dirs():
 
 
 def load_report():
-    """加载最新的扫描报告"""
-    report_files = sorted(REPORTS_DIR.glob("publish_*.html"), reverse=True)
-    if not report_files:
-        print("[ERROR] 未找到扫描报告")
+    files = sorted(REPORTS_DIR.glob("publish_*.html"), reverse=True)
+    if not files:
         return None
-    return report_files[0]
+    with open(files[0], "r", encoding="utf-8") as f:
+        return f.read()
 
 
-def load_raw_feed():
-    """加载原始扫描数据"""
-    feed_files = sorted(DATA_DIR.glob("raw_feed*.json"), reverse=True)
-    if not feed_files:
-        return []
-    with open(feed_files[0], "r", encoding="utf-8") as f:
-        return json.load(f) if isinstance(json.load(f), list) else []
+def gitee_api_upload(path, content, msg="归灯序自动发布"):
+    import urllib.request, urllib.error
 
+    api = f"https://gitee.com/api/v5/repos/{GITEE_USER}/{GITEE_REPO}/contents"
+    encoded = base64.b64encode(content.encode("utf-8")).decode("ascii")
 
-def parse_report_content(html_path):
-    """从发布报告HTML中提取项目数据"""
-    with open(html_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    sha = None
+    try:
+        req = urllib.request.Request(f"{api}/{path}?access_token={GITEE_TOKEN}")
+        with urllib.request.urlopen(req, timeout=10) as r:
+            data = json.loads(r.read())
+            if isinstance(data, dict):
+                sha = data.get("sha")
+    except urllib.error.HTTPError as e:
+        if e.code != 404:
+            print(f"  [WARN] check {path}: {e.code}")
 
-    # 尝试从HTML中提取JSON数据
-    projects = []
-    if "updateDashboard" in content:
-        start = content.find("updateDashboard(") + len("updateDashboard(")
-        depth = 0
-        end = start
-        for i, c in enumerate(content[start:], start):
-            if c == "(":
-                depth += 1
-            elif c == ")":
-                depth -= 1
-                if depth == 0:
-                    end = i
-                    break
-        json_str = content[start:end]
-        try:
-            data = json.loads(json_str)
-            raw_projects = data.get("projects", data.get("results", []))
-            for p in raw_projects:
-                projects.append({
-                    "title": p.get("title", p.get("name", "未知项目")),
-                    "category": p.get("category", "未分类"),
-                    "score": float(p.get("score", p.get("total_score", 7.0))),
-                    "summary": p.get("summary", p.get("description", "")),
-                    "steps": p.get("steps", p.get("operation_guide", [])),
-                    "risk": p.get("risk", p.get("risk_alert", "")),
-                    "suitable": p.get("suitable", p.get("target_audience", "所有人")),
-                    "scores_detail": p.get("scores_detail", p.get("dimension_scores", {})),
-                    "url": p.get("url", p.get("link", "")),
-                })
-        except (json.JSONDecodeError, KeyError):
-            pass
+    body = {"access_token": GITEE_TOKEN, "content": encoded, "message": msg}
+    if sha:
+        body["sha"] = sha
 
-    return projects
-
-
-def generate_radar_svg(project, size=300):
-    """生成六维评分雷达图SVG"""
-    dimensions = [
-        ("实操可行性", "feasibility", 25),
-        ("竞争程度", "competition", 20),
-        ("启动成本", "cost", 15),
-        ("回本速度", "time_to_return", 15),
-        ("可复制性", "scalability", 10),
-        ("自动化", "automation", 15),
-    ]
-
-    scores = project.get("scores_detail", {})
-    values = []
-    for name, key, weight in dimensions:
-        v = scores.get(key, scores.get(name, 7))
-        values.append((name, float(v) * 10, float(v)))
-
-    cx, cy, r = size // 2, size // 2, size // 2 - 50
-    n = len(values)
-
-    svg_parts = [f'<svg viewBox="0 0 {size} {size}" xmlns="http://www.w3.org/2000/svg">']
-
-    # 背景网格
-    levels = 5
-    for level in range(1, levels + 1):
-        lr = r * level / levels
-        points = []
-        for i in range(n):
-            angle = -math.pi / 2 + 2 * math.pi * i / n
-            x = cx + lr * math.cos(angle)
-            y = cy + lr * math.sin(angle)
-            points.append(f"{x:.1f},{y:.1f}")
-        svg_parts.append(
-            f'<polygon points="{" ".join(points)}" fill="none" stroke="#e9ecef" stroke-width="1"/>'
-        )
-
-    # 轴线
-    for i in range(n):
-        angle = -math.pi / 2 + 2 * math.pi * i / n
-        x = cx + r * math.cos(angle)
-        y = cy + r * math.sin(angle)
-        svg_parts.append(
-            f'<line x1="{cx}" y1="{cy}" x2="{x:.1f}" y2="{y:.1f}" stroke="#e9ecef" stroke-width="1"/>'
-        )
-
-    # 数据区域
-    data_points = []
-    for i, (name, _, score_val) in enumerate(values):
-        angle = -math.pi / 2 + 2 * math.pi * i / n
-        dist = r * score_val / 10
-        x = cx + dist * math.cos(angle)
-        y = cy + dist * math.sin(angle)
-        data_points.append(f"{x:.1f},{y:.1f}")
-
-    svg_parts.append(
-        f'<polygon points="{" ".join(data_points)}" fill="rgba(16,185,129,0.15)" stroke="#10b981" stroke-width="2"/>'
+    req = urllib.request.Request(
+        f"{api}/{path}", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"},
+        method="PUT" if sha else "POST"
     )
-
-    # 数据点
-    for i, (name, _, score_val) in enumerate(values):
-        angle = -math.pi / 2 + 2 * math.pi * i / n
-        dist = r * score_val / 10
-        x = cx + dist * math.cos(angle)
-        y = cy + dist * math.sin(angle)
-        svg_parts.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" fill="#10b981"/>')
-
-    # 标签
-    for i, (name, _, _) in enumerate(values):
-        angle = -math.pi / 2 + 2 * math.pi * i / n
-        lx = cx + (r + 35) * math.cos(angle)
-        ly = cy + (r + 35) * math.sin(angle)
-        anchor = "middle"
-        if angle < -2.6 or angle > 2.6:
-            anchor = "middle"
-        elif angle < -0.5:
-            anchor = "end"
-        elif angle < 0.5:
-            anchor = "start"
-        svg_parts.append(
-            f'<text x="{lx:.1f}" y="{ly:.1f}" text-anchor="{anchor}" font-size="11" fill="#6c757d" font-family="sans-serif">{name}</text>'
-        )
-
-    # 中心分数
-    avg = sum(v[1] for v in values) / len(values)
-    color = "#10b981" if avg >= 7 else ("#f59e0b" if avg >= 5 else "#ef4444")
-    svg_parts.append(
-        f'<text x="{cx}" y="{cy}" text-anchor="middle" dominant-baseline="central" font-size="28" font-weight="bold" fill="{color}" font-family="sans-serif">{avg:.1f}</text>'
-    )
-    svg_parts.append(
-        f'<text x="{cx}" y="{cy + 22}" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#adb5bd" font-family="sans-serif">综合评分</text>'
-    )
-
-    svg_parts.append("</svg>")
-    return "\n".join(svg_parts)
-
-
-def generate_score_bar(score, size="large"):
-    """生成评分条SVG"""
-    w = 320 if size == "large" else 200
-    h = 36 if size == "large" else 28
-    bar_w = (w - 80) * score / 10
-    color = "#10b981" if score >= 7 else ("#f59e0b" if score >= 5 else "#ef4444")
-
-    return f'''<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}">
-    <rect x="0" y="0" width="{w}" height="{h}" rx="{h//2}" fill="#f1f3f5"/>
-    <rect x="0" y="0" width="{bar_w:.0f}" height="{h}" rx="{h//2}" fill="{color}"/>
-    <text x="{w-5}" y="{h//2}" text-anchor="end" dominant-baseline="central" font-size="14" font-weight="bold" fill="#212529" font-family="sans-serif">{score:.1f}</text>
-</svg>'''
-
-
-def generate_step_card(steps, index):
-    """生成步骤卡片HTML"""
-    if not steps:
-        return ""
-    step_items = []
-    for i, step in enumerate(steps, 1):
-        step_items.append(
-            f'<div class="step-item"><span class="step-num">{i}</span><span class="step-text">{step}</span></div>'
-        )
-    return f'<div class="step-card">{"".join(step_items)}</div>'
-
-
-def build_post_html(projects, date_str):
-    """构建单日博客页面HTML"""
-    now = datetime.now()
-    date_display = f"{now.year}年{now.month}月{now.day}日"
-
-    project_cards = []
-    for i, p in enumerate(projects):
-        score = p.get("score", 7.0)
-        score_color = "#10b981" if score >= 7 else ("#f59e0b" if score >= 5 else "#ef4444")
-        radar_svg = generate_radar_svg(p)
-        category = p.get("category", "未分类")
-        risk = p.get("risk", "")
-        suitable = p.get("suitable", "所有人")
-        summary = p.get("summary", p.get("description", ""))
-
-        # 步骤
-        steps_html = ""
-        steps = p.get("steps", [])
-        if steps:
-            steps_html = '<div class="steps-section"><h4>三步上手</h4><div class="step-list">'
-            for j, step in enumerate(steps[:3], 1):
-                steps_html += f'<div class="step-item"><span class="step-num">0{j}</span><span class="step-text">{step}</span></div>'
-            steps_html += "</div></div>"
-
-        # 标签
-        tags = ""
-        if score >= 7.5:
-            tags += '<span class="tag tag-high">高分推荐</span>'
-        if score >= 7:
-            tags += '<span class="tag tag-green">可操作</span>'
-        if "零门槛" in category or "零成本" in summary:
-            tags += '<span class="tag tag-orange">零门槛</span>'
-
-        card = f'''
-        <article class="project-card">
-            <div class="pc-header">
-                <div class="pc-meta">
-                    <span class="pc-category">{category}</span>
-                    {tags}
-                </div>
-                <div class="pc-score-wrap">
-                    <span class="pc-score" style="color:{score_color}">{score:.1f}</span>
-                    <span class="pc-score-label">综合评分</span>
-                </div>
-            </div>
-            <h2 class="pc-title">{p["title"]}</h2>
-            <p class="pc-summary">{summary}</p>
-
-            <div class="pc-body">
-                <div class="pc-radar">
-                    {radar_svg}
-                </div>
-                <div class="pc-content-right">
-                    {steps_html}
-                    <div class="risk-box" style="display: {'block' if risk else 'none'}">
-                        <span class="risk-icon">!</span>
-                        <span class="risk-text">{risk}</span>
-                    </div>
-                    <div class="suitable-box">
-                        <span class="suitable-label">适合人群：</span>
-                        <span class="suitable-text">{suitable}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="pc-footer">
-                <span class="pc-source">归灯序扫描器 · 自动采集分析</span>
-            </div>
-        </article>'''
-        project_cards.append(card)
-
-    # 构建完整HTML
-    html = f'''<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{BRAND} - 每日全网赚钱机会扫描，帮散户避开坑找到真机会">
-    <title>{BRAND} · {date_display} 每日扫描 | 帮散户找到真机会</title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
-    <header class="site-header">
-        <div class="container">
-            <div class="header-left">
-                <h1 class="brand">{BRAND}</h1>
-                <p class="tagline">{TAGLINE}</p>
-            </div>
-            <div class="header-right">
-                <span class="date-badge">{date_display}</span>
-            </div>
-        </div>
-    </header>
-
-    <main class="container">
-        <section class="scan-meta">
-            <div class="scan-stats">
-                <div class="stat-item">
-                    <span class="stat-num">{len(projects)}</span>
-                    <span class="stat-label">今日扫描项目</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-num">{sum(1 for p in projects if p.get("score", 0) >= 7)}</span>
-                    <span class="stat-label">可操作项目</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-num">全网</span>
-                    <span class="stat-label">数据来源</span>
-                </div>
-            </div>
-        </section>
-
-        <section class="projects-list">
-            {"".join(project_cards)}
-        </section>
-
-        <section class="disclaimer">
-            <p>内容由归灯序扫描器自动生成，仅供参考，不构成投资建议</p>
-            <p class="factory-tag">{FACTORY}</p>
-        </section>
-    </main>
-
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; {now.year} {BRAND} · 全自动扫描工厂 · 关灯也能自己转</p>
-        </div>
-    </footer>
-</body>
-</html>'''
-    return html
-
-
-def build_index_html():
-    """构建博客首页"""
-    post_files = sorted(POSTS_DIR.glob("*.html"), reverse=True)
-    now = datetime.now()
-
-    post_items = []
-    for pf in post_files[:30]:
-        date_part = pf.stem.replace("post_", "")
-        post_items.append(
-            f'<li><a href="posts/{pf.name}">{date_part}</a></li>'
-        )
-
-    html = f'''<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{BRAND} - 全自动扫描全网赚钱机会，帮散户避开坑找到真机会">
-    <title>{BRAND} · 黑灯工厂 | 每日赚钱机会自动扫描</title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
-    <header class="site-header site-header-index">
-        <div class="container">
-            <div class="header-center">
-                <h1 class="brand-index">{BRAND}</h1>
-                <p class="tagline-index">{TAGLINE}</p>
-                <p class="factory-desc">全自动扫描工厂 · 关灯也能自己转</p>
-            </div>
-        </div>
-    </header>
-
-    <main class="container">
-        <section class="intro-section">
-            <h2>每天自动扫描，帮你发现赚钱机会</h2>
-            <p class="intro-text">
-                覆盖 12 大领域、100+ 中英文关键词、30+ 全球平台。<br>
-                四层深度分析：交叉验证 → 商业模式拆解 → 操作指导 → 风险预警。<br>
-                六维度评分，高于7.0分才推荐。
-            </p>
-        </section>
-
-        <section class="posts-index">
-            <h2>每日扫描记录</h2>
-            <ul class="post-list">
-                {"".join(post_items) if post_items else '<li class="no-posts">即将上线，敬请期待</li>'}
-            </ul>
-        </section>
-    </main>
-
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; {now.year} {BRAND} · 全自动扫描工厂 · 不构成投资建议</p>
-        </div>
-    </footer>
-</body>
-</html>'''
-    return html
-
-
-def write_css():
-    """写入CSS样式文件"""
-    css = '''/* ==========================================
-   归灯序 · 博客样式 v1.0
-   亮色清爽 · 卡片式 · 数据可视化
-   ========================================== */
-
-/* Reset & Base */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-    --bg: #ffffff;
-    --card-bg: #f8f9fa;
-    --card-hover-bg: #f0f2f5;
-    --card-border: #e9ecef;
-    --text: #212529;
-    --text-secondary: #6c757d;
-    --text-muted: #adb5bd;
-    --accent: #f59e0b;
-    --accent-light: #fff3cd;
-    --green: #10b981;
-    --red: #ef4444;
-    --blue: #3b82f6;
-    --purple: #8b5cf6;
-    --radius: 16px;
-    --radius-sm: 8px;
-    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-    background: #f5f6f8;
-    color: var(--text);
-    line-height: 1.7;
-    font-size: 16px;
-    -webkit-font-smoothing: antialiased;
-}
-
-.container {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 0 24px;
-}
-
-/* Header */
-.site-header {
-    background: var(--bg);
-    border-bottom: 1px solid var(--card-border);
-    padding: 20px 0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    backdrop-filter: blur(10px);
-    background: rgba(255,255,255,0.92);
-}
-
-.site-header .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.brand {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text);
-    letter-spacing: 0.5px;
-}
-
-.brand::before {
-    content: '';
-}
-
-.tagline {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-top: 2px;
-    font-weight: 400;
-}
-
-.date-badge {
-    background: var(--accent-light);
-    color: #b7791f;
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-/* Index Header */
-.site-header-index {
-    padding: 60px 0 40px;
-    border: none;
-    background: linear-gradient(135deg, #fff 0%, #fef9e7 100%);
-}
-.header-center { text-align: center; }
-.brand-index {
-    font-size: 42px;
-    font-weight: 800;
-    color: var(--text);
-    letter-spacing: 1px;
-    margin-bottom: 8px;
-}
-.tagline-index {
-    font-size: 18px;
-    color: var(--text-secondary);
-    margin-bottom: 12px;
-}
-.factory-desc {
-    font-size: 14px;
-    color: var(--text-muted);
-    margin-top: 8px;
-}
-
-/* Intro Section */
-.intro-section {
-    background: var(--bg);
-    border-radius: var(--radius);
-    padding: 40px;
-    margin: -20px 0 32px;
-    box-shadow: var(--shadow);
-    text-align: center;
-}
-.intro-section h2 {
-    font-size: 22px;
-    margin-bottom: 16px;
-    color: var(--text);
-}
-.intro-text {
-    font-size: 15px;
-    color: var(--text-secondary);
-    line-height: 1.9;
-}
-
-/* Scan Meta */
-.scan-meta {
-    margin-bottom: 28px;
-}
-.scan-stats {
-    display: flex;
-    gap: 16px;
-}
-.stat-item {
-    flex: 1;
-    background: var(--bg);
-    border-radius: var(--radius-sm);
-    padding: 20px;
-    text-align: center;
-    box-shadow: var(--shadow);
-}
-.stat-num {
-    display: block;
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--accent);
-    margin-bottom: 4px;
-}
-.stat-label {
-    font-size: 13px;
-    color: var(--text-secondary);
-}
-
-/* Project Card */
-.project-card {
-    background: var(--bg);
-    border-radius: var(--radius);
-    padding: 32px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow);
-    transition: box-shadow 0.2s;
-}
-.project-card:hover {
-    box-shadow: var(--shadow-md);
-}
-
-.pc-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 16px;
-}
-.pc-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-.pc-category {
-    font-size: 12px;
-    color: var(--text-secondary);
-    background: var(--card-bg);
-    padding: 4px 12px;
-    border-radius: 12px;
-}
-
-.tag {
-    font-size: 11px;
-    padding: 3px 10px;
-    border-radius: 10px;
-    font-weight: 600;
-}
-.tag-high { background: #d1fae5; color: #065f46; }
-.tag-green { background: #dbeafe; color: #1e40af; }
-.tag-orange { background: var(--accent-light); color: #92400e; }
-.tag-risk { background: #fee2e2; color: #991b1b; }
-
-.pc-score-wrap {
-    text-align: right;
-}
-.pc-score {
-    display: block;
-    font-size: 42px;
-    font-weight: 800;
-    line-height: 1;
-}
-.pc-score-label {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 2px;
-    display: block;
-}
-
-.pc-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 10px;
-    line-height: 1.4;
-}
-.pc-summary {
-    font-size: 15px;
-    color: var(--text-secondary);
-    margin-bottom: 24px;
-    line-height: 1.8;
-}
-
-.pc-body {
-    display: flex;
-    gap: 32px;
-    margin-bottom: 20px;
-}
-.pc-radar {
-    flex: 0 0 280px;
-}
-.pc-radar svg {
-    width: 100%;
-    height: auto;
-}
-.pc-content-right {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-/* Steps */
-.steps-section h4 {
-    font-size: 14px;
-    color: var(--text);
-    margin-bottom: 10px;
-}
-.step-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.step-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-}
-.step-num {
-    flex: 0 0 28px;
-    height: 28px;
-    background: var(--accent);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
-    flex-shrink: 0;
-}
-.step-text {
-    font-size: 14px;
-    color: var(--text);
-    line-height: 2;
-    padding-top: 2px;
-}
-
-/* Risk Box */
-.risk-box {
-    background: #fff5f5;
-    border-left: 3px solid var(--red);
-    padding: 12px 16px;
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.risk-icon {
-    flex-shrink: 0;
-    width: 24px;
-    height: 24px;
-    background: var(--red);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 14px;
-}
-.risk-text {
-    font-size: 14px;
-    color: #991b1b;
-    line-height: 1.6;
-}
-
-/* Suitable */
-.suitable-box {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-}
-.suitable-label {
-    color: var(--text-secondary);
-    flex-shrink: 0;
-}
-.suitable-text {
-    color: var(--text);
-    background: var(--card-bg);
-    padding: 4px 12px;
-    border-radius: 12px;
-}
-
-.pc-footer {
-    border-top: 1px solid var(--card-border);
-    padding-top: 16px;
-    margin-top: 4px;
-}
-.pc-source {
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-/* Disclaimer */
-.disclaimer {
-    text-align: center;
-    padding: 32px 0;
-    font-size: 13px;
-    color: var(--text-muted);
-}
-.factory-tag {
-    color: var(--accent);
-    font-weight: 600;
-    margin-top: 8px;
-    font-size: 14px;
-}
-
-/* Footer */
-.site-footer {
-    background: var(--bg);
-    border-top: 1px solid var(--card-border);
-    padding: 24px 0;
-    text-align: center;
-    font-size: 13px;
-    color: var(--text-muted);
-}
-
-/* Post Index */
-.posts-index {
-    background: var(--bg);
-    border-radius: var(--radius);
-    padding: 32px 40px;
-    box-shadow: var(--shadow);
-    margin-bottom: 40px;
-}
-.posts-index h2 {
-    font-size: 20px;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid var(--card-border);
-}
-.post-list {
-    list-style: none;
-}
-.post-list li {
-    padding: 14px 0;
-    border-bottom: 1px solid var(--card-border);
-}
-.post-list li:last-child { border-bottom: none; }
-.post-list a {
-    color: var(--text);
-    text-decoration: none;
-    font-size: 16px;
-    font-weight: 500;
-    display: block;
-    padding: 6px 12px;
-    border-radius: var(--radius-sm);
-    transition: all 0.15s;
-}
-.post-list a:hover {
-    background: var(--card-bg);
-    color: var(--accent);
-}
-.no-posts {
-    color: var(--text-muted);
-    font-size: 15px;
-    text-align: center;
-    padding: 20px 0;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .container { padding: 0 16px; }
-    .pc-body { flex-direction: column; }
-    .pc-radar { flex: 0 0 auto; max-width: 240px; margin: 0 auto; }
-    .project-card { padding: 24px 20px; }
-    .pc-title { font-size: 18px; }
-    .brand-index { font-size: 30px; }
-    .scan-stats { flex-direction: column; }
-    .intro-section { padding: 24px; }
-}
-'''
-    css_path = ASSETS_DIR / "style.css"
-    with open(css_path, "w", encoding="utf-8") as f:
-        f.write(css)
-    return css_path
-
-
-def save_post(html, date_str):
-    """保存文章到posts目录"""
-    filename = f"post_{date_str}.html"
-    path = POSTS_DIR / filename
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(html)
-    print(f"[OK] 文章已保存: {path}")
-    return path
-
-
-def save_index(html):
-    """保存首页"""
-    path = BLOG_DIR / "index.html"
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(html)
-    print(f"[OK] 首页已更新: {path}")
-
-
-def git_push():
-    """推送到Gitee"""
-    os.chdir(BLOG_DIR)
-
-    # 初始化git仓库（如果还没初始化）
-    if not (BLOG_DIR / ".git").exists():
-        subprocess.run(["git", "init"], check=True, capture_output=True)
-        subprocess.run(["git", "remote", "add", "origin", GITEE_REMOTE], check=True, capture_output=True)
-
-    # 配置git用户
-    subprocess.run(["git", "config", "user.name", "归灯序"], check=True, capture_output=True)
-    subprocess.run(["git", "config", "user.email", f"{GITEE_USER}@gitee.com"], check=True, capture_output=True)
-
-    # 拉取最新
-    subprocess.run(["git", "fetch", "origin"], capture_output=True)
-    subprocess.run(["git", "checkout", "master"], capture_output=True)
-    subprocess.run(["git", "reset", "--hard", "origin/master"], capture_output=True)
-
-    # 添加所有文件
-    subprocess.run(["git", "add", "-A"], check=True, capture_output=True)
-
-    # 检查是否有变更
-    result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
-    if not result.stdout.strip():
-        print("[OK] 没有新变更，跳过推送")
+    try:
+        urllib.request.urlopen(req, timeout=15)
+        print(f"  [OK] {'更新' if sha else '创建'} {path}")
+        return True
+    except urllib.error.HTTPError as e:
+        print(f"  [FAIL] {path}: {e.code}")
+        return False
+
+
+def push_all():
+    files = []
+    for f in BLOG_DIR.rglob("*"):
+        if f.is_file() and ".git" not in str(f):
+            rel = str(f.relative_to(BLOG_DIR)).replace("\\", "/")
+            files.append((rel, f.read_text(encoding="utf-8")))
+    if not files:
         return
-
-    # 提交推送
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    subprocess.run(["git", "commit", "-m", f"归灯序自动发布 {now}"], check=True, capture_output=True)
-    subprocess.run(["git", "push", "-u", "origin", "master"], check=True, capture_output=True)
-    print(f"[OK] 已推送到Gitee: https://gitee.com/{GITEE_USER}/{GITEE_REPO}")
-
-
-def generate_demo_projects():
-    """生成演示项目数据（当没有真实扫描数据时使用）"""
-    return [
-        {
-            "title": "Grass Network · 带宽共享挖矿",
-            "category": "DePIN · 零门槛",
-            "score": 8.5,
-            "summary": "通过分享闲置带宽赚取GRASS代币。只需安装浏览器插件或桌面端，无需任何资金投入。已有超200万节点在线，代币已在交易所交易。每日收益稳定，典型用户日均$2-5。适合有电脑常开环境的用户。",
-            "steps": [
-                "前往 getgrass.io 注册账号，用邮箱即可",
-                "下载并安装Grass Desktop，登录后保持电脑在线",
-                "每天查看积分面板，累积到1000分可提现"
-            ],
-            "risk": "代币价格波动较大，网络要求稳定。国内网络可能需要代理才能连接节点。部分运营商可能限制P2P流量。",
-            "suitable": "有闲置带宽和常开电脑的用户",
-            "scores_detail": {"feasibility": 9, "competition": 8, "cost": 9.5, "time_to_return": 7.5, "scalability": 7, "automation": 9}
-        },
-        {
-            "title": "AI头像生成 · Gumroad数字产品",
-            "category": "AI变现 · 数字产品",
-            "score": 8.2,
-            "summary": "用AI工具批量生成专业头像/插画，在Gumroad、Etsy等平台销售。成本接近零，一次制作可重复销售。热门风格包括：商务头像、情侣插画、宠物肖像。头部卖家月入$3000+。",
-            "steps": [
-                "在Midjourney或DALL-E生成50张高质量头像模板",
-                "注册Gumroad账号，设置产品页面和定价（建议$5-15/套）",
-                "在小红书/Twitter发布免费样本引流到Gumroad"
-            ],
-            "risk": "市场竞争加剧，需要持续出新风格。AI生成内容版权归属有争议。平台可能限制AI内容。",
-            "suitable": "有基本审美能力、会使用AI绘图工具的人",
-            "scores_detail": {"feasibility": 8.5, "competition": 6, "cost": 9, "time_to_return": 7, "scalability": 8, "automation": 8}
-        },
-        {
-            "title": "银行开户奖励套利",
-            "category": "合规套利 · 金融",
-            "score": 7.6,
-            "summary": "利用银行新用户开户奖励进行合规套利。美国银行常提供$200-500的新用户奖励，只需完成直接存款要求。可同时操作多家银行，年化收益可观。适合有海外银行账户条件的用户。",
-            "steps": [
-                "筛选当前有开户奖励的银行（Doctor of Credit等网站追踪）",
-                "按要求开设账户并设置工资直接存款",
-                "满足条件后等待奖励到账，通常30-90天"
-            ],
-            "risk": "需要美国SSN或ITIN，门槛较高。频繁开关账户可能影响信用记录。奖励会计入应税收入。",
-            "suitable": "有海外身份/银行账户条件的人",
-            "scores_detail": {"feasibility": 5, "competition": 8.5, "cost": 8, "time_to_return": 7, "scalability": 7, "automation": 5}
-        }
-    ]
+    print(f"[INFO] {len(files)} files, uploading via API...")
+    ok = sum(1 for p, c in files if gitee_api_upload(p, c))
+    print(f"[OK] done: {ok}/{len(files)}")
 
 
 def main():
-    """主流程"""
     print("=" * 50)
-    print(f"  {BRAND} · 博客自动发布")
-    print(f"  {FACTORY}")
+    print(f"  {BRAND} · 黑灯工厂 v2.0")
     print("=" * 50)
-    print()
 
     ensure_dirs()
-
-    # 1. 写CSS
     write_css()
-    print("[OK] CSS样式已生成")
+    print("[OK] CSS")
 
-    # 2. 加载数据
-    report = load_report()
-    if report:
-        print(f"[OK] 找到报告: {report.name}")
-        projects = parse_report_content(report)
-    else:
-        projects = []
+    projects = demo_projects()
+    date_str = datetime.now().strftime("%Y-%m-%d")
 
-    # 如果没解析到项目，用演示数据
-    if not projects:
-        print("[INFO] 未找到扫描数据，使用演示项目")
-        projects = generate_demo_projects()
+    hook = "今天4个项目，零门槛的占了3个。被AI替代下来的人，最适合的项目往往不是学新技术，而是做AI做不了的事。"
+    post_html = build_post_html(projects, date_str, hook_line=hook)
+    post_path = POSTS_DIR / f"post_{date_str}.html"
+    post_path.write_text(post_html, encoding="utf-8")
+    print(f"[OK] 文章: {post_path.name}")
 
-    print(f"[OK] 共 {len(projects)} 个项目")
-    for p in projects:
-        print(f"  - {p['title']} (评分: {p['score']:.1f})")
+    (BLOG_DIR / "index.html").write_text(build_index_html(), encoding="utf-8")
+    print("[OK] 首页")
 
-    # 3. 生成文章
-    now = datetime.now()
-    date_str = now.strftime("%Y-%m-%d")
-
-    post_html = build_post_html(projects, date_str)
-    save_post(post_html, date_str)
-
-    # 4. 更新首页
-    index_html = build_index_html()
-    save_index(index_html)
-
-    # 5. 推送
-    print()
-    print("[INFO] 准备推送到 Gitee...")
-    try:
-        git_push()
-        print()
-        print("=" * 50)
-        print(f"  ✅ 发布完成！")
-        print(f"  博客地址: https://gitee.com/{GITEE_USER}/{GITEE_REPO}")
-        print(f"  (需开启Gitee Pages服务)")
-        print("=" * 50)
-    except Exception as e:
-        print(f"[WARNING] Git推送失败（可能是Git未就绪）: {e}")
-        print(f"[INFO] 文章已在本地生成:")
-        print(f"  - 首页: {BLOG_DIR / 'index.html'}")
-        print(f"  - 文章: {POSTS_DIR / f'post_{date_str}.html'}")
-        print("=" * 50)
+    print("\n[INFO] 上传到 Gitee...")
+    push_all()
+    print(f"\n  ✅ 完成！仓库: https://gitee.com/{GITEE_USER}/{GITEE_REPO}")
+    print(f"  本地: {BLOG_DIR / 'index.html'}")
 
 
 if __name__ == "__main__":

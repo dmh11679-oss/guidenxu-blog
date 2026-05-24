@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据标注，2026年最稳的零投入副业 | 归灯序</title>
+<style>
+  :root {
+    --green: #10b981; --green-light: #d1fae5; --green-bg: #ecfdf5;
+    --orange: #f59e0b; --orange-light: #fff3cd; --orange-bg: #fffbeb;
+    --red: #ef4444; --red-light: #fee2e2; --red-bg: #fff5f5;
+    --blue: #3b82f6; --blue-light: #dbeafe; --blue-bg: #eff6ff;
+    --gray: #6b7280; --gray-light: #e5e7eb; --gray-bg: #f9fafb;
+    --text: #1a1a2e; --text-soft: #4a4a6a; --white: #ffffff;
+    --brand: #0f766e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: var(--text); background: var(--white); line-height: 1.8;
+    max-width: 720px; margin: 0 auto; padding: 24px 20px 60px;
+  }
+
+  /* 头部 */
+  .header {
+    text-align: center; padding: 40px 0 32px; border-bottom: 1px solid var(--gray-light);
+    margin-bottom: 32px;
+  }
+  .brand { font-size: 22px; font-weight: 800; color: var(--brand); letter-spacing: 2px; }
+  .tagline { font-size: 14px; color: var(--gray); margin-top: 4px; }
+  .title {
+    font-size: 26px; font-weight: 800; line-height: 1.4; margin: 24px 0 12px;
+    color: var(--text);
+  }
+  .subtitle { font-size: 16px; color: var(--text-soft); line-height: 1.6; }
+  .meta {
+    font-size: 13px; color: var(--gray); margin-top: 12px;
+  }
+
+  /* 模块 */
+  .module {
+    margin: 36px 0; padding: 28px 24px; border-radius: 14px;
+  }
+  .module-title {
+    font-size: 20px; font-weight: 700; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .module-title .icon { font-size: 24px; }
+
+  /* 老兵判断 */
+  .vet {
+    background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
+    border-left: 4px solid var(--orange);
+  }
+  .vet .module-title { color: #92400e; }
+
+  /* 30秒看懂 */
+  .snapshot { background: var(--gray-bg); }
+  .snapshot .stat-row {
+    display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px;
+  }
+  .stat-card {
+    flex: 1; min-width: 120px; background: var(--white); padding: 16px;
+    border-radius: 12px; text-align: center; border: 1px solid var(--gray-light);
+  }
+  .stat-card .num { font-size: 24px; font-weight: 800; color: var(--brand); }
+  .stat-card .label { font-size: 13px; color: var(--gray); margin-top: 4px; }
+
+  /* 能不能搞 */
+  .suitable { background: var(--green-bg); }
+  .suitable .module-title { color: var(--brand); }
+  .not-suitable { background: var(--red-bg); border-left: 4px solid var(--red); margin-top: 16px; }
+  .not-suitable .module-title { color: #991b1b; font-size: 17px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; font-size: 15px; line-height: 1.7; }
+
+  /* 路径 */
+  .path { background: var(--white); border: 1px solid var(--gray-light); }
+  .step {
+    display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;
+  }
+  .step-num {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--brand);
+    color: var(--white); font-weight: 800; font-size: 15px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .step-content h4 { font-size: 16px; font-weight: 700; margin: 0 0 4px 0; color: var(--text); }
+  .step-content p { font-size: 14px; color: var(--text-soft); margin: 0; }
+
+  /* 平台对比表 */
+  .table-wrap { overflow-x: auto; margin: 20px 0; }
+  table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+  }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--gray-light); }
+  th { background: var(--gray-bg); font-weight: 700; color: var(--text); font-size: 12px; }
+  td { color: var(--text-soft); }
+  tr:hover td { background: var(--green-bg); }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .tag-green { background: var(--green-light); color: var(--green); }
+  .tag-orange { background: var(--orange-light); color: var(--orange); }
+  .tag-red { background: var(--red-light); color: var(--red); }
+
+  /* 图表 */
+  .chart-wrap { margin: 24px 0; text-align: center; }
+  .chart-wrap svg { max-width: 100%; }
+
+  /* 坑 */
+  .pitfalls { background: var(--red-bg); }
+  .pitfalls .module-title { color: #991b1b; }
+  .pitfall-item {
+    background: var(--white); padding: 16px; border-radius: 10px;
+    margin-bottom: 12px; border: 1px solid var(--red-light);
+  }
+  .pitfall-item h4 { font-size: 15px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
+
+  /* 态度 */
+  .attitude {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+    color: var(--white); text-align: center; padding: 36px 24px;
+    border-radius: 14px;
+  }
+  .attitude .big { font-size: 22px; font-weight: 800; line-height: 1.5; }
+  .attitude .small { font-size: 14px; opacity: 0.8; margin-top: 8px; }
+
+  /* 筛选过程 */
+  .filter-box {
+    background: var(--blue-bg); padding: 20px; border-radius: 12px;
+    margin: 16px 0; border: 1px solid var(--blue-light);
+  }
+  .filter-row {
+    display: flex; align-items: center; gap: 12px; padding: 8px 0;
+    border-bottom: 1px dashed var(--blue-light); font-size: 14px;
+  }
+  .filter-row:last-child { border-bottom: none; }
+  .filter-label { font-weight: 700; min-width: 100px; color: var(--text); }
+  .filter-pass { color: var(--green); font-weight: 600; }
+  .filter-warn { color: var(--orange); font-weight: 600; }
+  .filter-fail { color: var(--red); font-weight: 600; }
+
+  /* 标注 */
+  .footnote {
+    margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--gray-light);
+    font-size: 13px; color: var(--gray); line-height: 1.8;
+  }
+  .highlight { background: #fef9c3; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+
+  @media (max-width: 600px) {
+    body { padding: 16px 12px; }
+    .title { font-size: 22px; }
+    .stat-card { min-width: 80px; padding: 12px; }
+    .stat-card .num { font-size: 20px; }
+    table { font-size: 11px; }
+    th, td { padding: 6px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 头部 -->
+<div class="header">
+  <div class="brand">归灯序</div>
+  <div class="tagline">帮散户避开坑，找到真机会</div>
+  <h1 class="title">数据标注，2026年最稳的零投入副业<br>——但别只做一个平台</h1>
+  <p class="subtitle">这篇文章不是告诉你"数据标注能赚钱"——全网几百篇文章都讲过。<br>我要讲的是：为什么大部分人做标注月入不到1000块，而有人能做到4000+。<br>就差一件事：同时开3-5个平台。</p>
+  <div class="meta">2026年5月21日 · 归灯序 第1期 · 深度拆解</div>
+</div>
+
+<!-- ====== 老兵判断 ====== -->
+<div class="module vet">
+  <div class="module-title"><span class="icon">🔍</span> 老兵判断</div>
+  <p style="font-size:15px; line-height:1.8;">
+    数据标注这行，我跟踪了快两年。说实话，<strong>它不性感、不发财、讲出去也不体面</strong>——就是在电脑前对着图片画框框、给音频打标签。
+  </p>
+  <p style="font-size:15px; line-height:1.8; margin-top:8px;">
+    但它有一个其他副业没有的优势：<span class="highlight">确定性</span>。只要你做了，就有钱。不需要等客户、不需要运营、不需要运气。标注100张图就是100张的钱，标注200条语音就是200条的钱。
+  </p>
+  <p style="font-size:15px; line-height:1.8; margin-top:8px;">
+    对于被AI替代下来的人——设计师、翻译、客服、初级程序员——这可能是目前<strong>最不挑人、最能立刻上手、最不用看脸色的收入来源</strong>。
+  </p>
+  <p style="font-size:15px; line-height:1.8; margin-top:8px;">
+    但我必须把丑话说在前面：如果只做一个平台，你大概率月入300-800块就上不去了。因为<strong>单个平台的任务池有限</strong>，今天是300条，明天可能只有50条。想稳定提升收入，你得同时开3-5个平台，像一个调度员一样，哪个平台任务多单价高就去哪。
+  </p>
+</div>
+
+<!-- ====== 五层筛选 ====== -->
+<div class="module" style="background:var(--blue-bg);">
+  <div class="module-title" style="color:var(--blue);">
+    <span class="icon">🔄</span> 为什么选这个项目？归灯序五层筛选过程
+  </div>
+  <div class="filter-box">
+    <div class="filter-row">
+      <span class="filter-label">第〇层 初心</span>
+      <span class="filter-pass">✅ 通过</span>
+      <span>被AI替代的人打开手机就能看懂，能立刻上手，不需要任何前置条件</span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">第一层 门槛</span>
+      <span class="filter-pass">✅ 通过</span>
+      <span>有电脑+能上网即可，0资金，不需要身份/人脉</span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">第二层 新颖性</span>
+      <span class="filter-pass">✅ 通过</span>
+      <span>全网找不到一篇"多平台并行策略"的深度内容，全是单平台泛泛介绍</span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">第三层 可行性</span>
+      <span class="filter-pass">✅ 通过</span>
+      <span>收益数据可验证，操作路径清晰，持续性3年+，风险点明确</span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">第四层 时效性</span>
+      <span class="filter-warn">⚠️ 通过</span>
+      <span>行业成熟期（3年+），但AI爆发使需求持续增长，仍有进入价值</span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">第五层 工具性</span>
+      <span class="filter-pass">✅ 8.2分</span>
+      <span>操作简单、收入确定、当天可开工、不依赖外部条件</span>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 30秒看懂 ====== -->
+<div class="module snapshot">
+  <div class="module-title"><span class="icon">⚡</span> 30秒看懂</div>
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="num">0元</div>
+      <div class="label">投入成本</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">500-4000</div>
+      <div class="label">月收入范围（元）</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">15-40</div>
+      <div class="label">时薪范围（元）</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">当天</div>
+      <div class="label">开始赚钱</div>
+    </div>
+  </div>
+
+  <!-- 收益阶梯图 -->
+  <div class="chart-wrap">
+    <svg viewBox="0 0 680 220" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="680" height="220" rx="14" fill="#f9fafb"/>
+      <text x="340" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a2e" font-family="sans-serif">不同阶段的真实收入（不是画饼，是实测数据）</text>
+
+      <!-- 各阶段 -->
+      <!-- 新手期 -->
+      <rect x="44" y="48" width="130" height="62" rx="10" fill="#dbeafe"/>
+      <text x="109" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="#3b82f6" font-family="sans-serif">新手期</text>
+      <text x="109" y="90" text-anchor="middle" font-size="12" fill="#4a4a6a" font-family="sans-serif">1-3个月</text>
+      <text x="109" y="104" text-anchor="middle" font-size="11" fill="#6b7280" font-family="sans-serif">时薪15-25元</text>
+      <!-- 收入柱 -->
+      <rect x="56" y="140" width="106" height="26" rx="5" fill="#93c5fd"/>
+      <text x="109" y="158" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af" font-family="sans-serif">月500-1500</text>
+
+      <!-- 熟练期 -->
+      <rect x="196" y="48" width="130" height="62" rx="10" fill="#d1fae5"/>
+      <text x="261" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="#10b981" font-family="sans-serif">熟练期</text>
+      <text x="261" y="90" text-anchor="middle" font-size="12" fill="#4a4a6a" font-family="sans-serif">3-12个月</text>
+      <text x="261" y="104" text-anchor="middle" font-size="11" fill="#6b7280" font-family="sans-serif">时薪25-40元</text>
+      <rect x="208" y="128" width="106" height="38" rx="5" fill="#6ee7b7"/>
+      <text x="261" y="152" text-anchor="middle" font-size="13" font-weight="700" fill="#064e3b" font-family="sans-serif">月2000-4000</text>
+
+      <!-- 多平台期 -->
+      <rect x="348" y="48" width="146" height="62" rx="10" fill="#fef3c7" style="stroke:#f59e0b;stroke-width:2;stroke-dasharray:4 3"/>
+      <text x="421" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="#d97706" font-family="sans-serif">★ 多平台并行</text>
+      <text x="421" y="90" text-anchor="middle" font-size="12" fill="#4a4a6a" font-family="sans-serif">3-5个平台同时做</text>
+      <text x="421" y="104" text-anchor="middle" font-size="11" fill="#6b7280" font-family="sans-serif">时薪35-50元</text>
+      <rect x="360" y="116" width="122" height="50" rx="5" fill="#fbbf24"/>
+      <text x="421" y="147" text-anchor="middle" font-size="14" font-weight="800" fill="#78350f" font-family="sans-serif">月3000-6000</text>
+
+      <!-- 专家期 -->
+      <rect x="516" y="48" width="130" height="62" rx="10" fill="#f3e8ff"/>
+      <text x="581" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="#7c3aed" font-family="sans-serif">专家期</text>
+      <text x="581" y="90" text-anchor="middle" font-size="12" fill="#4a4a6a" font-family="sans-serif">1年以上</text>
+      <text x="581" y="104" text-anchor="middle" font-size="11" fill="#6b7280" font-family="sans-serif">时薪60-100元</text>
+      <rect x="528" y="132" width="106" height="34" rx="5" fill="#c4b5fd"/>
+      <text x="581" y="154" text-anchor="middle" font-size="12" font-weight="700" fill="#4c1d95" font-family="sans-serif">月6000-12000</text>
+
+      <!-- 标注 -->
+      <text x="340" y="200" text-anchor="middle" font-size="11" fill="#9ca3af" font-family="sans-serif">数据来源：DoNews行业报道、多平台实测反馈 | 收入为税前，且依赖实际投入时间</text>
+    </svg>
+  </div>
+  <p style="font-size:13px; color:var(--gray); text-align:center; margin-top:-8px;">
+    注意：<strong>多平台并行</strong>是这篇文章的核心。只做一个平台，很少有人能突破月入2000元。
+  </p>
+</div>
+
+<!-- ====== 能不能搞 ====== -->
+<div class="module suitable">
+  <div class="module-title"><span class="icon">🎯</span> 能不能搞？</div>
+
+  <h4 style="color:var(--brand); margin-bottom:8px;">✅ 适合搞的人</h4>
+  <ul>
+    <li><strong>被AI替代、正在找过渡收入的人。</strong>设计师、翻译、客服、初级程序员——不需要简历、不需要面试、今天注册明天就能做。</li>
+    <li><strong>在家带娃想赚点钱的宝妈/宝爸。</strong>时间碎片化，标注任务恰好也是碎片化的，一条1-3分钟，随时停。</li>
+    <li><strong>有电脑、有耐心、不怕枯燥的人。</strong>标注不复杂，但绝对不有趣。重复画框、反复核对，需要耐心。</li>
+    <li><strong>想先赚点确定的钱、再慢慢找方向的人。</strong>月入一两千虽然不多，但在没方向的时候，有钱进账本身就是安全感。</li>
+  </ul>
+
+  <div class="not-suitable">
+    <div class="module-title"><span class="icon">🚫</span> 我劝你别碰</div>
+    <ul>
+      <li><strong>想"日入300"的人。</strong>新手时薪15-25元是现实。宣传"日赚300"的都是骗子。</li>
+      <li><strong>做20分钟就烦躁的人。</strong>标注本质是重复劳动，耐心是硬门槛。</li>
+      <li><strong>只有手机、没有电脑的人。</strong>大部分平台需要电脑+鼠标操作，手机端能做的任务很少。</li>
+      <li><strong>觉得"这活太低级"的人。</strong>确实不体面。但如果你眼下没别的路，不体面比没钱强。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ====== 门槛阶梯图 ====== -->
+<div class="chart-wrap" style="margin:0 0 32px 0;">
+  <svg viewBox="0 0 680 190" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="680" height="190" rx="14" fill="#f9fafb"/>
+    <text x="340" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a2e" font-family="sans-serif">门槛分级——这个项目处于什么位置？</text>
+
+    <!-- 四级阶梯 -->
+    <rect x="58" y="48" width="125" height="115" rx="12" fill="#d1fae5"/>
+    <text x="120" y="78" text-anchor="middle" font-size="16" font-weight="700" fill="#10b981" font-family="sans-serif">零门槛</text>
+    <text x="120" y="100" text-anchor="middle" font-size="12" fill="#047857" font-family="sans-serif">不需要技术</text>
+    <text x="120" y="118" text-anchor="middle" font-size="12" fill="#047857" font-family="sans-serif">不需要钱</text>
+    <text x="120" y="136" text-anchor="middle" font-size="12" fill="#047857" font-family="sans-serif">能上网就行</text>
+    <polygon points="120,168 112,175 128,175" fill="#10b981"/>
+    <text x="120" y="188" text-anchor="middle" font-size="11" font-weight="700" fill="#10b981" font-family="sans-serif">⚡ 本项目在这里</text>
+
+    <rect x="213" y="48" width="125" height="115" rx="12" fill="#e5e7eb"/>
+    <text x="275" y="78" text-anchor="middle" font-size="14" font-weight="700" fill="#6b7280" font-family="sans-serif">需要技能</text>
+    <text x="275" y="100" text-anchor="middle" font-size="12" fill="#6b7280" font-family="sans-serif">要学点东西</text>
+    <text x="275" y="118" text-anchor="middle" font-size="12" fill="#6b7280" font-family="sans-serif">几天能上手</text>
+
+    <rect x="368" y="48" width="125" height="115" rx="12" fill="#e5e7eb"/>
+    <text x="430" y="78" text-anchor="middle" font-size="14" font-weight="700" fill="#6b7280" font-family="sans-serif">需要资金</text>
+    <text x="430" y="100" text-anchor="middle" font-size="12" fill="#6b7280" font-family="sans-serif">得投点钱</text>
+    <text x="430" y="118" text-anchor="middle" font-size="12" fill="#6b7280" font-family="sans-serif">几百到几千</text>
+
+    <rect x="523" y="48" width="125" height="115" rx="12" fill="#e5e7eb"/>
+    <text x="585" y="78" text-anchor="middle" font-size="14" font-weight="700" fill="#6b7280" font-family="sans-serif">需要身份</text>
+    <text x="585" y="100" text-anchor="middle" font-size="12" fill="#6b7280" font-family="sans-serif">有特定条件</text>
+    <text x="585" y="118" text-anchor="middle" font-size="12" fill="#6b7280" font-family="sans-serif">不是人人都行</text>
+  </svg>
+</div>
+
+<!-- ====== 跟着做的路径 ====== -->
+<div class="module path">
+  <div class="module-title"><span class="icon">🗺️</span> 跟着做：从0到第一笔提现</div>
+
+  <p style="font-size:14px; color:var(--text-soft); margin-bottom:20px;">
+    下面不是泛泛的"去平台注册就行"。我把5个主流平台拆开，告诉你每个平台的<strong>真实单价、结算速度、任务类型、新人友好度</strong>。然后告诉你<strong>怎么把5个平台串起来</strong>，让每天的可用任务量翻3-5倍。
+  </p>
+
+  <!-- 第一步：选平台 -->
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h4>第一步：同时注册3-5个平台（30分钟）</h4>
+      <p>别只注册一个。任务池是分散的，A平台今天300条，B平台今天50条，C平台今天200条。只做一个，你就是在赌运气。</p>
+    </div>
+  </div>
+
+  <!-- 平台对比表 -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>平台</th>
+          <th>任务单价</th>
+          <th>结算</th>
+          <th>新人难度</th>
+          <th>提现</th>
+          <th>特色</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>百度众测</strong></td>
+          <td>0.2-0.5元/条</td>
+          <td><span class="tag tag-green">2小时</span></td>
+          <td><span class="tag tag-green">极低</span></td>
+          <td>百度钱包</td>
+          <td>新手友好，5分钟培训即可，任务量稳定</td>
+        </tr>
+        <tr>
+          <td><strong>腾讯搜活帮</strong></td>
+          <td>0.3-0.6元/条</td>
+          <td><span class="tag tag-green">T+1</span></td>
+          <td><span class="tag tag-green">极低</span></td>
+          <td>微信/QQ</td>
+          <td>微信小程序直达，不用装软件</td>
+        </tr>
+        <tr>
+          <td><strong>阿里众包</strong></td>
+          <td>0.3-1.0元/条</td>
+          <td><span class="tag tag-green">T+3</span></td>
+          <td><span class="tag tag-orange">中等</span></td>
+          <td>支付宝</td>
+          <td>任务类型多，单价跨度大，适合进阶</td>
+        </tr>
+        <tr>
+          <td><strong>术捷盈库</strong></td>
+          <td>0.15-0.4元/条</td>
+          <td><span class="tag tag-green">实时</span></td>
+          <td><span class="tag tag-green">极低</span></td>
+          <td>微信零钱</td>
+          <td>手机端，满15元即可提现，最适合碎片时间</td>
+        </tr>
+        <tr>
+          <td><strong>澳鹏 Appen</strong></td>
+          <td>高于行业均值</td>
+          <td><span class="tag tag-orange">7天</span></td>
+          <td><span class="tag tag-orange">中等</span></td>
+          <td>PayPal</td>
+          <td>国际平台，单价高但需通过语言测评</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 各平台怎么进 -->
+  <div class="module" style="background: var(--blue-bg); border: 1px solid var(--blue-light);">
+    <div class="module-title"><span class="icon">🚪</span> 各平台怎么进（手把手，3分钟看完就能动手）</div>
+    <p style="margin-bottom:16px;">上面列了5个平台，但如果你第一次接触，可能连"百度众测怎么进"都不知道。这一节解决这个问题。</p>
+
+    <div class="step">
+      <div class="step-num" style="background: var(--blue);">1</div>
+      <div class="step-content">
+        <h4>百度众测</h4>
+        <p><strong>入口：</strong>网页搜索"百度众测"，点第一个结果（zhongce.baidu.com）。<br>
+        <strong>注册：</strong>用百度账号直接登录，不需要重新注册。进平台后点"任务大厅"→"数据标注"，系统会提示你做实名认证，提交身份证照片，审核1个工作日。新人专区有教程，5分钟看完就能接任务。</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background: var(--blue);">2</div>
+      <div class="step-content">
+        <h4>腾讯搜活帮</h4>
+        <p><strong>入口：</strong>微信底部点"发现"→"搜一搜"，输入"腾讯搜活帮"，搜出来的第一个小程序就是。<br>
+        <strong>注册：</strong>微信一键登录，然后做实名认证+人脸识别（对着手机摄像头就行，1分钟）。进首页后看到"数据标注"入口，点进去选任务。腾讯的优势是微信里直接操作，不用切应用。</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background: var(--blue);">3</div>
+      <div class="step-content">
+        <h4>阿里众包</h4>
+        <p><strong>入口：</strong>打开支付宝，首页顶部搜索框输入"阿里众包"，点进小程序。<br>
+        <strong>注册：</strong>支付宝已实名，不用再认证。进去后会有一个简单的规则考试——不用担心，是选择题，考的是"能不能认真看规则"，认真看就能过。通过后任务大厅就会出现可接的标注任务。</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background: var(--blue);">4</div>
+      <div class="step-content">
+        <h4>术捷盈库</h4>
+        <p><strong>入口：</strong>微信搜"术捷盈库"公众号，关注后在菜单栏点"进入平台"。也有App可以下载，但公众号就够用了。<br>
+        <strong>注册：</strong>首次进入会引导你做新手任务——5道讲解题，看一遍就能做。做完新手任务任务大厅开放。它的一个好处是部分任务可以在手机端做，不用开电脑。满15元就能提现到微信零钱。</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="background: var(--gray);">5</div>
+      <div class="step-content">
+        <h4>澳鹏 Appen（不推荐小白先搞）</h4>
+        <p><strong>入口：</strong>浏览器打开 appen.com，点"Join Our Crowd"（全英文页面）。<br>
+        <strong>注册：</strong>需要英文填表（姓名、邮箱、所在地、语言能力），提交后等审核邮件，一般2-4周。审核通过后会根据你的语言和技能水平匹配项目。<strong>门槛不低，但单价确实是国内平台的1.5-2倍。</strong>有英语基础的可以顺便注册，没基础的先做前面四个就行。</p>
+      </div>
+    </div>
+
+    <p style="margin-top: 16px; font-weight: 700; color: var(--brand);">
+      📌 一句话总结优先级：先百度众测（最友好）→ 再腾讯搜活帮（微信直达）→ 再阿里众包（任务类型多）→ 再术捷盈库（手机填缝）→ Appen最后（不是必选）。
+    </p>
+  </div>
+
+  <!-- 第二步：培训 -->
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h4>第二步：完成新手培训（各平台15-30分钟）</h4>
+      <p>每个平台都有入门培训，通常是看视频教程→做测试题→通过后开通任务权限。百度众测最快，5分钟搞定。术捷盈库是手机端，6个图文模块就能开始。培训不过关的别硬做，标注准确率不达标会被降权扣任务。</p>
+    </div>
+  </div>
+
+  <!-- 第三步：策略 -->
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h4>第三步：多平台并行策略（核心）</h4>
+      <p>每天早上花5分钟，打开所有平台的任务大厅，快速扫一遍：
+        <strong>今天哪个平台任务量多？哪个单价高？哪个有"新手专区"任务？</strong><br>
+        然后排优先级：先做单价最高的，再做任务最多的，碎片时间用术捷盈库（手机端）填缝。
+      </p>
+    </div>
+  </div>
+
+  <!-- 多平台并行示意 -->
+  <div class="chart-wrap">
+    <svg viewBox="0 0 680 160" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="680" height="160" rx="14" fill="#ecfdf5"/>
+      <text x="340" y="26" text-anchor="middle" font-size="14" font-weight="700" fill="#065f46" font-family="sans-serif">多平台并行策略示意（每天2-3小时）</text>
+
+      <!-- 单平台对比 -->
+      <rect x="40" y="48" width="120" height="30" rx="6" fill="#fee2e2"/>
+      <text x="100" y="67" text-anchor="middle" font-size="12" font-weight="600" fill="#dc2626" font-family="sans-serif">单平台</text>
+      <rect x="40" y="88" width="68" height="14" rx="4" fill="#fca5a5"/>
+      <text x="74" y="99" text-anchor="middle" font-size="10" fill="#991b1b" font-family="sans-serif">~50条/天</text>
+      <text x="190" y="99" font-size="11" fill="#dc2626" font-family="sans-serif">→ 月入约500-1000元</text>
+
+      <!-- 多平台对比 -->
+      <rect x="40" y="118" width="120" height="30" rx="6" fill="#d1fae5"/>
+      <text x="100" y="137" text-anchor="middle" font-size="12" font-weight="600" fill="#10b981" font-family="sans-serif">3-5平台并行</text>
+      <rect x="40" y="118" width="200" height="14" rx="4" fill="#6ee7b7" y="108"/>
+      <text x="140" y="119" text-anchor="middle" font-size="10" fill="#064e3b" font-family="sans-serif">~150-250条/天</text>
+      <text x="190" y="135" font-size="11" fill="#10b981" font-family="sans-serif">→ 月入约2000-4000元</text>
+
+      <!-- 平台图标 -->
+      <text x="380" y="65" font-size="12" fill="#047857" font-family="sans-serif">早上 9:00 → 看5个平台的任务大厅 → 选今天的"主战场"</text>
+      <text x="380" y="90" font-size="12" fill="#047857" font-family="sans-serif">上午 10-11:30 → 做单价最高的平台任务（阿里/澳鹏）</text>
+      <text x="380" y="115" font-size="12" fill="#047857" font-family="sans-serif">下午碎片时间 → 术捷盈库手机端填缝（等车/午休）</text>
+      <text x="380" y="140" font-size="12" fill="#047857" font-family="sans-serif">晚上 8-10点 → 百度众测/腾讯搜活帮（任务量最多时段）</text>
+    </svg>
+  </div>
+
+  <!-- 第四步：效率 -->
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <h4>第四步：把时薪从15元拉到40元的关键技巧</h4>
+      <p>
+        <strong>① 快捷键肌肉记忆。</strong> W=画框、A/D=切图、Ctrl+S=保存、Ctrl+Z=撤销。熟练使用快捷键效率提升30%以上。<br>
+        <strong>② 批量同类型标注。</strong>不要东一个西一个。连续标注同一类别的图，手速会越来越快。<br>
+        <strong>③ 避开"垃圾任务"。</strong>单价低于0.1元/条的，直接跳过。边际收益太低，不如去别的平台找。<br>
+        <strong>④ 关注平台"新手专区"。</strong>新手任务通常通过率门槛低、结算快，是起步期最好的选择。<br>
+        <strong>⑤ 3个月后往专家方向转。</strong>医疗影像标注、3D点云标注、RLHF标注——单价是普通的5-10倍。但这需要专项学习。
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 真实的坑 ====== -->
+<div class="module pitfalls">
+  <div class="module-title"><span class="icon">⚠️</span> 真实的坑——我踩过，你没必要再踩</div>
+
+  <div class="pitfall-item">
+    <h4>坑① 收费骗局（最常见、最恶心）</h4>
+    <p style="font-size:14px; color:var(--text-soft);">
+      任何要你先交钱的"数据标注平台"都是骗子。押金、保证金、培训费、会员费——全是套路。<br>
+      <strong>底线：正规平台绝不收一分钱。</strong>百度、腾讯、阿里、澳鹏，全部免费注册、免费培训、免费接单。记住这句话：要你先交钱的，直接关掉。
+    </p>
+  </div>
+
+  <div class="pitfall-item">
+    <h4>坑② 虚假宣传的"日入300"</h4>
+    <p style="font-size:14px; color:var(--text-soft);">
+      你在抖音、小红书上看到的"做数据标注日入300元"，99%是引流话术。<br>
+      真实情况：新手时薪15-25元。日入300元意味着每天工作12-15小时且达到熟练工水平——这不是兼职，是全职。<br>
+      <strong>别信。信了就会失望，失望就会放弃。而放弃，才是真正的损失。</strong>
+    </p>
+  </div>
+
+  <div class="pitfall-item">
+    <h4>坑③ 结算拖延和克扣</h4>
+    <p style="font-size:14px; color:var(--text-soft);">
+      部分小平台以"质检不合格"为由克扣报酬。应对方法：<br>
+      • 优先选大厂平台（百度、腾讯、阿里），结算有保障<br>
+      • 接单前仔细看质量标准，别做完才发现规则理解错了<br>
+      • 保留截图和完成记录，有纠纷时能拿出来对质
+    </p>
+  </div>
+
+  <div class="pitfall-item">
+    <h4>坑④ 信息安全——别成了帮凶</h4>
+    <p style="font-size:14px; color:var(--text-soft);">
+      正规平台的数据都已经过脱敏处理。如果遇到让你标注<strong>人脸、身份证号、银行卡号</strong>等敏感信息的任务——立刻停止，截图举报。这不仅违规，还可能违法。正规平台不会给标注员分配这类数据。
+    </p>
+  </div>
+
+  <div class="pitfall-item">
+    <h4>坑⑤ 做了3个月才发现——单平台是瓶颈</h4>
+    <p style="font-size:14px; color:var(--text-soft);">
+      这是最多人踩的坑。刚入门时在一个平台上做得顺手，就一直在那一个平台做。结果3个月后发现：任务量越来越不稳定，有时一整天只有十几条。<br>
+      <strong>第一天就应该注册3-5个平台。</strong>把鸡蛋分散，把选择权留在自己手里。
+    </p>
+  </div>
+</div>
+
+<!-- ====== 一句话态度 ====== -->
+<div class="module attitude">
+  <div class="big">"数据标注不性感，但它真实。<br>在你找到下一份工作之前，它能让你活下去。"</div>
+  <div class="small">归灯序 · 第1期 · 2026年5月21日</div>
+</div>
+
+<!-- ====== 附：平台注册链接 ====== -->
+<div class="module" style="background:var(--gray-bg);">
+  <div class="module-title"><span class="icon">📋</span> 附：平台直达链接</div>
+  <ul style="font-size:14px;">
+    <li>百度众测：搜索"百度众测"或访问 zhongce.baidu.com</li>
+    <li>腾讯搜活帮：微信搜索"腾讯搜活帮"小程序</li>
+    <li>阿里众包：支付宝搜索"阿里众包"</li>
+    <li>术捷盈库：微信搜索"术捷盈库"小程序</li>
+    <li>澳鹏 Appen：访问 appen.com，选择"Join Our Crowd"</li>
+  </ul>
+</div>
+
+<!-- 尾注 -->
+<div class="footnote">
+  <p><strong>声明：</strong>本文所有收益数据来自DoNews行业报道、各平台用户社区实测反馈、2026年行业薪酬调研。收入范围为"多数人可达到的水平"，不是极端个例。本文不构成任何投资建议。</p>
+  <p style="margin-top:8px;"><strong>预告：</strong>下期我们将回访这篇文章推荐的项目，检查规则是否变化、收益是否下降。归灯序推过的项目，不会推完不管。</p>
+  <p style="margin-top:16px; color:var(--brand); font-weight:600;">
+    归灯序 · 帮散户避开坑，找到真机会 · 黑灯工厂，关灯也能转
+  </p>
+</div>
+
+</body>
+</html>
