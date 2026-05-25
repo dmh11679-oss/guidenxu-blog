@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="先说明白：做这个事不要钱。但你花了时间不一定有回报。它是一张免费的彩票，不是一份有合同的工作。">
+    <title>普通人的 Monad 第一课：30 分钟白嫖一个 2.25 亿美金的项目 · 归灯序 | 帮散户找到真机会</title>
+    <link rel="stylesheet" href="../assets/style.css">
+    <style>
+        /* === 文章内页样式 === */
+        .article-header{text-align:center;padding:36px 20px 20px;margin-bottom:20px}
+        .article-header h1{font-size:26px;font-weight:800;color:#1a1a2e;margin-bottom:10px;line-height:1.4}
+        .article-header .meta{font-size:14px;color:#8890a0}
+        .article-body{background:#fff;border-radius:14px;padding:36px 40px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:24px}
+        .article-body h2{font-size:20px;font-weight:700;color:#1a1a2e;margin:32px 0 12px;padding-bottom:8px;border-bottom:2px solid #e9ecef}
+        .article-body h2:first-child{margin-top:0}
+        .article-body h3{font-size:17px;font-weight:600;color:#1a1a2e;margin:24px 0 8px}
+        .article-body p{font-size:15px;color:#4a4a6a;line-height:1.85;margin-bottom:14px}
+        .article-body ul,.article-body ol{padding-left:22px;margin-bottom:16px}
+        .article-body li{font-size:15px;color:#4a4a6a;line-height:1.85;margin-bottom:6px}
+        .article-body blockquote{background:#f8f9fa;border-left:3px solid #f59e0b;padding:12px 18px;margin:16px 0;border-radius:0 8px 8px 0;font-size:14px;color:#6c757d}
+        .article-body blockquote.signature{background:transparent;border-left:3px solid #10b981;font-size:13px;color:#8890a0;font-style:italic;margin-top:32px}
+        .article-body code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:14px;color:#e11d48}
+        .article-body pre{background:#1e293b;color:#e2e8f0;padding:20px;border-radius:10px;overflow-x:auto;margin:16px 0}
+        .article-body pre code{background:none;color:inherit;padding:0}
+        .article-body a{color:#3b82f6;text-decoration:underline}
+        .article-body hr{border:none;border-top:1px solid #e9ecef;margin:32px 0}
+        .article-body table{width:100%;border-collapse:collapse;margin:16px 0}
+        .article-body th{background:#f1f5f9;padding:10px 14px;text-align:left;font-size:13px;font-weight:600;color:#4a4a6a}
+        .article-body td{padding:10px 14px;border-bottom:1px solid #e9ecef;font-size:14px;color:#4a4a6a}
+        .disclaimer-box{background:#fff3cd;border:1px solid #f59e0b;border-radius:12px;padding:16px 20px;margin-bottom:24px}
+        .disclaimer-box p{font-size:14px;color:#92400e;margin:4px 0}
+        .step-section{background:#f8f9fa;border-radius:10px;padding:20px 24px;margin:16px 0}
+        .back-link{text-align:center;padding:20px 0}
+        .back-link a{color:#3b82f6;text-decoration:none;font-size:14px}
+        @media(max-width:640px){.article-body{padding:22px 18px}.article-header h1{font-size:22px}}
+    </style>
+</head>
+<body>
+    <header class="article-header">
+        <h1>普通人的 Monad 第一课：30 分钟白嫖一个 2.25 亿美金的项目</h1>
+        <p class="meta">归灯序 · 2026年5月25日</p>
+    </header>
+
+    <main class="container">
+        <div class="article-body">
+<p># 普通人的 Monad 第一课：30 分钟白嫖一个 2.25 亿美金的项目</p>
+
+<blockquote>归灯序 · 2026年5月25日</blockquote>
+<p>></p>
+<blockquote>先说明白：做这个事不要钱。但你花了时间不一定有回报。它是一张免费的彩票，不是一份有合同的工作。</blockquote>
+
+<hr>
+
+<h2>你看完这篇文章会知道三件事</h2>
+
+<ol>
+<li>Monad 是什么东西（一句话就能说清楚）</li>
+<li>跟你有什么关系</li>
+<li>怎么一步步操作（每一步都有截图说明）</li>
+</ul>
+<p>如果看完还不会，那是我们的问题，不是你笨。</p>
+
+<hr>
+
+<h2>先搞明白：你为什么要花这 30 分钟</h2>
+
+<p>市面上有一种项目叫"测试网项目"。简单说就是：一条新的区块链还没正式上线之前，项目方开放一个免费的网络让大家来测试。你来玩，他们送你一些假的测试币。虽然这些测试币现在一文不值，但如果项目以后火了、发了真的币，早期来玩的人有可能分到真金白银。</p>
+
+<p>这种事以前发生过。2022 年 Aptos 测试网，早期参与者后来拿到的空投价值好几万块钱。2023 年 Sui 也差不多。但这不是保证——每 100 个测试网项目里，能成的可能就那么两三个。</p>
+
+<p><strong>Monad 是那两三个里的一个吗？没人能打包票。但它有几个硬指标，让"碰碰运气"这件事的性价比变得极高。</strong></p>
+
+<hr>
+
+<h2>Monad 的硬指标</h2>
+
+<h3>钱：融了 2.25 亿美金</h3>
+
+<p>2024 年初，Monad 完成了一轮 2.25 亿美元的种子轮融资。领投的是 Paradigm（币圈最顶级的基金之一），跟投的有 Coinbase Ventures、Electric Capital。这个数字在当时是公链项目融资的最高纪录。</p>
+
+<p><strong>为什么融资金额重要？</strong> 因为融得多 = 项目方能撑得久 = 不太可能在测试网阶段就烂尾。你花的时间，是在一个大概率会走到主网的项目上，而不是一个随时可能消失的草台班子。</p>
+
+<h3>技术：10,000 TPS，兼容以太坊</h3>
+
+<p>Monad 说自己能做到每秒 10,000 笔交易，是以太坊主网的 300-600 倍。同时它完全兼容以太坊的智能合约——也就是说，现在以太坊上的所有应用，搬到 Monad 上来不需要重写代码。</p>
+
+<p><strong>这是什么意思？</strong> 如果主网上线后，以太坊上的大项目愿意迁移过来，这条链的生态会迅速丰富起来。</p>
+
+<h3>状态：测试网已经跑了 3 个月，还在活跃</h3>
+
+<p>Monad 的测试网在今年 2 月 19 日上线。到现在 3 个月，上面的 DApp（去中心化应用）还在不断增加。官方没有说测试网什么时候关闭，主网什么时候上线。<strong>越早上车，你的地址在链上的"资历"越老——如果未来空投跟历史记录挂钩，老地址优先级更高。</strong></p>
+
+<hr>
+
+<h2>操作流程（30 分钟，零成本）</h2>
+
+<p>不需要懂区块链。你只需要知道"点哪个按钮""把哪串数字填进去"。</p>
+
+<h3>准备工作</h3>
+
+<ul>
+<li>一台能上网的电脑</li>
+<li>一个浏览器（Chrome 或 Edge 都行）</li>
+<li>30 分钟时间</li>
+<li>**不要钱，一分钱都不要**</li>
+</ul>
+<hr>
+
+<h3>第一步：装一个钱包（5 分钟）</h3>
+
+<p>钱包就是你在这条链上的"账户"。我们推荐用 Phantom。</p>
+
+<ol>
+<li>浏览器打开 https://phantom.app</li>
+<li>点"Download"，选你的浏览器（Chrome / Edge / Firefox）</li>
+<li>安装扩展程序</li>
+<li>打开 Phantom，点"Create New Wallet"</li>
+<li>设置一个解锁密码（记好）</li>
+<li>**最重要的一步**：系统会给你 12 个英文单词（叫"助记词"），**用笔写在纸上**，拍照存手机里。这 12 个单词是你账户的唯一钥匙——丢了没人能帮你找回。</li>
+</ul>
+<blockquote>替代方案：如果你已经有 OKX 钱包或 Backpack 钱包，跳过这一步，直接用现成的。</blockquote>
+
+<hr>
+
+<h3>第二步：把 Monad 测试网加到钱包里（3 分钟）</h3>
+
+<p>你刚装的钱包还不知道 Monad 测试网的存在。你需要手动告诉它。</p>
+
+<ol>
+<li>打开 Phantom 钱包</li>
+<li>找到设置 → "网络"或"Networks" → "添加自定义网络"</li>
+<li>把下面这些信息**原样复制粘贴**进去：</li>
+</ul>
+<table class="priority-table"><thead><tr>
+<th>填什么</th>
+<th>填这个</th>
+</tr></thead><tbody>
+<tr>
+<td>网络名称</td>
+<td>Monad Testnet</td>
+</tr>
+<tr>
+<td>RPC URL</td>
+<td>https://testnet-rpc.monad.xyz</td>
+</tr>
+<tr>
+<td>链 ID</td>
+<td>10143</td>
+</tr>
+<tr>
+<td>货币符号</td>
+<td>MON</td>
+</tr>
+<tr>
+<td>区块浏览器</td>
+<td>https://monad-testnet.socialscan.io/</td>
+</tr>
+</tbody></table>
+
+<p>填完点"保存"。钱包左上角应该显示"Monad Testnet"了。</p>
+
+<hr>
+
+<h3>第三步：领免费的测试币（2 分钟）</h3>
+
+<ol>
+<li>浏览器打开 https://testnet.monad.xyz</li>
+<li>点右上角"Connect Wallet"，选择 Phantom</li>
+<li>钱包弹窗出来，点"连接"</li>
+<li>找到"Faucet"（水龙头）或者"Get Test Tokens"</li>
+<li>点一下，等几秒钟</li>
+<li>回到钱包，你应该能看到账户里有 MON 代币了（可能是 0.01 或 0.1 或别的数字）</li>
+</ul>
+<p><strong>如果没领到</strong>：去 https://testnet.monadexplorer.com/ 输入你的钱包地址，看看是不是之前已经有人给你发过测试币了（Monad 给 880 万个以太坊地址空投过测试币）。如果有，就不需要领了。</p>
+
+<blockquote>每 12 小时可以领一次。不用急着刷，一周领两三次就够了。</blockquote>
+
+<hr>
+
+<h3>第四步：做点操作（15 分钟）</h3>
+
+<p>光领测试币不做事，等于没参与。你需要让这条链"感受到你的存在"。</p>
+
+<p><strong>最简单的操作：转账</strong></p>
+
+<ol>
+<li>在 Phantom 钱包里，点"Send"（发送）</li>
+<li>输入一个目标地址。如果没有别人的地址，可以用这个测试地址：`0x0000000000000000000000000000000000000001`</li>
+<li>输入发送金额（比如 0.001 MON）</li>
+<li>点确认</li>
+<li>等几秒，交易完成。</li>
+</ul>
+<p><strong>稍微进阶的操作：用生态 DApp</strong></p>
+
+<ol>
+<li>浏览器打开 https://www.monad.xyz/ecosystem</li>
+<li>随便挑一两个应用进去</li>
+<li>连接钱包</li>
+<li>能做 Swap（兑换）就做一笔，能做质押就质押一点</li>
+<li>每个操作完成后，**把交易记录的链接保存下来**——以后可能需要证明你确实操作过。</li>
+</ul>
+<p><strong>把所有交易哈希（一串很长的字母数字）截图保存</strong>，万一以后需要验证资格，这是你的证据。</p>
+
+<hr>
+
+<h3>第五步：之后怎么维护</h3>
+
+<p>不用天天盯着。每周花 5 分钟：</p>
+
+<ol>
+<li>打开钱包看一眼测试币还在不在</li>
+<li>去 Monad 生态页面看看有没有新的 DApp 上线</li>
+<li>有新东西就上去点两下</li>
+<li>关注 Monad 的 Discord（https://discord.gg/monad），主网有消息会第一时间通知</li>
+</ul>
+<hr>
+
+<h2>你可能想问的</h2>
+
+<p><strong>问：真的不要钱吗？</strong></p>
+<p>答：真的。测试币是项目方免费给的，跟游戏里的金币一样，不能提现，不能在真实世界买东西。</p>
+
+<p><strong>问：一定能赚钱吗？</strong></p>
+<p>答：不一定。官方从来没说过会给测试网参与者发空投。我们只是在赌：融了 2.25 亿美金的项目，大概率会发币，发币的时候大概率会奖励早期参与者。"大概率"不是"一定"，别把全部希望寄托在一个"可能"上。</p>
+
+<p><strong>问：我每天要花多长时间？</strong></p>
+<p>答：第一次设置大概 30 分钟。之后每周 5 分钟就够了。</p>
+
+<p><strong>问：我电脑配置不高，能跑吗？</strong></p>
+<p>答：能。你不需要跑节点，不需要高性能设备。就是个网页操作，十年前的老电脑也能做。</p>
+
+<p><strong>问：代币什么时候发？</strong></p>
+<p>答：不知道。主网都还没上线，代币更早着呢。可能一两个月，可能半年。别急。</p>
+
+<p><strong>问：如果发币了值不值钱？</strong></p>
+<p>答：同类项目（Aptos、Sui、Sei）的市值在几十亿到上百亿美元区间。Monad 能不能到这个级别取决于主网上线后的生态表现。现在没法判断。</p>
+
+<hr>
+
+<h2>再强调一遍</h2>
+
+<p>这件事的本质是：<strong>花 30 分钟，买一张免费的彩票。这张彩票的发行方融了 2.25 亿美金，Paradigm 和 Coinbase 都投了钱。但彩票就是彩票——可能中奖，可能不中。</strong></p>
+
+<p>如果你现在是急需用钱的状态，这篇文章不该是你优先看的。先去找能即时进账的事。</p>
+
+<p>如果你只是想"顺手做件事，万一以后有惊喜"——那这个适合你。</p>
+
+<hr>
+
+<p>*归灯序 · 帮散户避开坑，找到真机会*</p>
+<p>*不是卖课，不收群费，不割韭菜。我们探路，你参考。*</p>
+
+        </div>
+        <div class="back-link">
+            <a href="../index.html">&larr; 回到归灯序首页</a>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <p>归灯序 &mdash; 不保证赚钱，但保证说实话</p>
+    </footer>
+</body>
+</html>
