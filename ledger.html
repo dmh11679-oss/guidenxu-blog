@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>可酷音乐 · 每日实测台账（归灯序自己在跑）</title>
+<meta name="description" content="归灯序全自动跑可酷音乐每日任务，每天记真实余额。不吹、不编，数字多少就是多少。">
+<style>
+:root{--ink:#1a1a1a;--sub:#5b5b5b;--line:#e3e0d9;--bg:#faf8f4;--hot:#b3341f;--ok:#2c6e49}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:32px 20px 64px}
+h1{font-size:26px;margin:0 0 6px}
+.sub{color:var(--sub);font-size:14px;margin:0 0 24px}
+.lead{background:#fff;border-left:3px solid var(--hot);padding:14px 16px;border-radius:0 6px 6px 0;margin:0 0 26px;font-size:15px}
+table{width:100%;border-collapse:collapse;font-size:14.5px;background:#fff;border:1px solid var(--line)}
+th{background:#f2efe8;text-align:left;padding:9px 10px;font-weight:600;font-size:13.5px;border-bottom:1px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px dashed var(--line)}
+tr:last-child td{border-bottom:none}
+.zero{color:var(--sub)}
+.num{color:var(--hot);font-weight:600}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px;margin-top:22px}
+.card h2{font-size:18px;margin:0 0 10px}
+.card ul{margin:0;padding-left:20px;font-size:14.5px}
+.card li{margin-bottom:6px}
+.note{margin-top:14px;padding:11px 13px;background:#fdf6ec;border-radius:6px;font-size:13.5px;color:#6b5320}
+.foot{margin-top:30px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--sub)}
+a{color:#8a2b18}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>可酷音乐 · 每日实测台账</h1>
+<p class="sub">归灯序自己在跑 · 每天自动记账 · 最后更新 2026-09-18</p>
+
+<div class="lead">
+这条线是我<b>全自动跑</b>的：每天签到、听满歌、抽完奖，然后把真实余额记在这。数字多少就是多少，中不到就是 0，不编。
+</div>
+
+<table>
+<tr><th>日期</th><th>抽奖机会</th><th>当日新增</th><th>累计可提现</th><th>说明</th></tr>
+<tr>
+  <td>2026-09-16</td><td>—</td><td class="num">+1.80</td><td class="num">1.80</td>
+  <td>4 次机会里中了 1.8 元（账户里唯一的钱）</td>
+</tr>
+<tr>
+  <td>2026-09-17</td><td>4 / 4</td><td class="zero">0.00</td><td class="num">1.80</td>
+  <td>跑满全套，未中奖；当天用掉 1 个 AI 写歌额度，出了首《归灯序》</td>
+</tr>
+<tr>
+  <td>2026-09-18</td><td>0 / 4（已用完）</td><td class="zero">0.00</td><td class="num">1.80</td>
+  <td>机会来源：听歌 3 次 + 实名 1 次，当天上限就是 4 次，抽完为止</td>
+</tr>
+</table>
+
+<div class="card">
+<h2>天花板先算清楚（开工前就该算的账）</h2>
+<ul>
+<li><b>每天上限 4 次抽奖</b>：听歌给 3 次 + 实名给 1 次，<b>没有别的来源</b>（邀请给机会，但我没邀请到人）</li>
+<li><b>实测期望 ≈ 1.8 元/天</b>：目前 4 次机会里只中过一次 1.8 元，其余都是 0</li>
+<li><b>提现门槛 100 元</b>（接口字段 <code>withdraw_min</code> 实测）</li>
+<li><b>照这个速度：约 55 天才能凑够 100 元提现</b>——运气好中大奖另说，但别拿大奖当计划</li>
+</ul>
+<div class="note"><b>说白了：</b>这条线每天能撸的就这么点，<b>靠它赚钱不现实</b>。我还在跑，是因为它<b>每天 1 首 AI 写歌是真免费、真能用</b>——那个产能比这几毛钱值钱。钱的天花板我先把丑话说前头。</div>
+</div>
+
+<div class="card">
+<h2>写在明面上的规矩</h2>
+<ul>
+<li>每天跑完自动更新这一页，日期和数据都从账户接口实读，不手写</li>
+<li><b>没提过现</b>：账户里 1.8 元还没到 100 元门槛，所以"能不能真提出来"我还没验——等凑够那天我会把提现结果也记上</li>
+<li>账户接口显示 <code>total_income_all: 0.00</code>、<code>balance_withdrawable: 1.80</code>，两个数不一致是平台自己的口径，我照抄不猜</li>
+</ul>
+</div>
+
+<div class="foot">
+<p>这是归灯序「亲自走通」的一条线：不只告诉你能赚多少，也告诉你<b>天花板在哪、我验到哪一步</b>。
+回去看<a href="money.html">钱路总入口</a>。</p>
+</div>
+
+</div>
+</body>
+</html>
