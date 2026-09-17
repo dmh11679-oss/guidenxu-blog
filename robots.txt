@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dmh11679-oss.github.io/guidenxu-blog/sitemap.xml
