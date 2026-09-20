@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="归灯序 · 2026-09-20 · 数据是我自己跑的，脚本和可复现方法都在文末。">
+    <title>RSI 冲到 70 就该做空？黄金六年数据说：反了 · 归灯序 | 帮散户找到真机会</title>
+    <link rel="stylesheet" href="../assets/style.css">
+    <style>
+        /* === 文章内页样式 === */
+        .article-header{text-align:center;padding:36px 20px 20px;margin-bottom:20px}
+        .article-header h1{font-size:26px;font-weight:800;color:#1a1a2e;margin-bottom:10px;line-height:1.4}
+        .article-header .meta{font-size:14px;color:#8890a0}
+        .article-body{background:#fff;border-radius:14px;padding:36px 40px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:24px}
+        .article-body h2{font-size:20px;font-weight:700;color:#1a1a2e;margin:32px 0 12px;padding-bottom:8px;border-bottom:2px solid #e9ecef}
+        .article-body h2:first-child{margin-top:0}
+        .article-body h3{font-size:17px;font-weight:600;color:#1a1a2e;margin:24px 0 8px}
+        .article-body p{font-size:15px;color:#4a4a6a;line-height:1.85;margin-bottom:14px}
+        .article-body ul,.article-body ol{padding-left:22px;margin-bottom:16px}
+        .article-body li{font-size:15px;color:#4a4a6a;line-height:1.85;margin-bottom:6px}
+        .article-body blockquote{background:#f8f9fa;border-left:3px solid #f59e0b;padding:12px 18px;margin:16px 0;border-radius:0 8px 8px 0;font-size:14px;color:#6c757d}
+        .article-body blockquote.signature{background:transparent;border-left:3px solid #10b981;font-size:13px;color:#8890a0;font-style:italic;margin-top:32px}
+        .article-body code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:14px;color:#e11d48}
+        .article-body pre{background:#1e293b;color:#e2e8f0;padding:20px;border-radius:10px;overflow-x:auto;margin:16px 0}
+        .article-body pre code{background:none;color:inherit;padding:0}
+        .article-body a{color:#3b82f6;text-decoration:underline}
+        .article-body hr{border:none;border-top:1px solid #e9ecef;margin:32px 0}
+        .article-body table{width:100%;border-collapse:collapse;margin:16px 0}
+        .article-body th{background:#f1f5f9;padding:10px 14px;text-align:left;font-size:13px;font-weight:600;color:#4a4a6a}
+        .article-body td{padding:10px 14px;border-bottom:1px solid #e9ecef;font-size:14px;color:#4a4a6a}
+        .disclaimer-box{background:#fff3cd;border:1px solid #f59e0b;border-radius:12px;padding:16px 20px;margin-bottom:24px}
+        .disclaimer-box p{font-size:14px;color:#92400e;margin:4px 0}
+        .step-section{background:#f8f9fa;border-radius:10px;padding:20px 24px;margin:16px 0}
+        .back-link{text-align:center;padding:20px 0}
+        .back-link a{color:#3b82f6;text-decoration:none;font-size:14px}
+        @media(max-width:640px){.article-body{padding:22px 18px}.article-header h1{font-size:22px}}
+    </style>
+</head>
+<body>
+    <header class="article-header">
+        <h1>RSI 冲到 70 就该做空？黄金六年数据说：反了</h1>
+        <p class="meta">归灯序 · 2026年9月21日</p>
+    </header>
+
+    <main class="container">
+        <div class="article-body">
+
+<blockquote>归灯序 · 2026-09-20 · 数据是我自己跑的，脚本和可复现方法都在文末。</blockquote>
+
+<p>散户学技术指标，第一条多半就是这句：RSI 到 70 叫超买，要跌了，可以做空；到 30 叫超卖，要反弹了，可以做多。</p>
+
+<p>指标说明这么写，教科书这么写，短视频里也这么说。</p>
+
+<p>我把这句话拿去黄金上，用六年伦敦金数据算了三遍（先代理、再权威现货、再样本外分段）。结论跟教科书是反的。</p>
+
+<hr>
+
+<h2>最硬的一张表</h2>
+
+<p>数据用的是 <strong>LBMA 官方伦敦金下午定盘价</strong>（伦敦金银市场协会，1968 年至今，公开免费），日线，2020-08 到 2026-09。RSI 用 Wilder 平滑，跟 MT4 里那个 <code>iRSI</code> 一致。</p>
+
+<table class="priority-table"><thead><tr>
+<th>信号</th>
+<th>次数</th>
+<th>20 个交易日后</th>
+<th>胜率</th>
+</tr></thead><tbody>
+<tr>
+<td>RSI ≥ 70 做空</td>
+<td>93</td>
+<td>**−2.58%**</td>
+<td>**35.2%**</td>
+</tr>
+<tr>
+<td>RSI ≤ 30 做多</td>
+<td>27</td>
+<td>**+3.01%**</td>
+<td>**85.2%**</td>
+</tr>
+<tr>
+<td>同期基准（随便哪天买）</td>
+<td>—</td>
+<td>+1.17%</td>
+<td>—</td>
+</tr>
+</tbody></table>
+
+<p><strong>超买做空，跑输"啥也不做"。</strong></p>
+
+<p>更直白一点：RSI 首次冲上 70 之后 20 天，价格<strong>继续涨</strong>的概率是 <strong>64.8%</strong>，平均再涨 1.875%。</p>
+
+<p>不是"要跌了"，是"现在很强"。</p>
+
+<h2>为什么会这样：钝化</h2>
+
+<p>RSI 超买不代表涨不动，它只是说明<strong>最近涨得急</strong>。</p>
+
+<p>黄金日线上，超买状态平均持续 <strong>4.56 根 K 线</strong>，最长一次连续 <strong>20 个交易日</strong>挂在 70 以上——整整一个月。33% 的超买段会拖过 3 根以上。</p>
+
+<p>你在第 1 根就空进去，后面还有 19 根在涨。这不是运气差，是参数本身在这个品种上的期望值就是负的。</p>
+
+<h2>但这里有个反转，我得说清楚</h2>
+
+<p>上一节的话，我只敢对<strong>单边上涨的年份</strong>说。把样本切成两段看：</p>
+
+<table class="priority-table"><thead><tr>
+<th></th>
+<th>2020-2023（震荡、回调）</th>
+<th>2024-2026（单边上涨）</th>
+</tr></thead><tbody>
+<tr>
+<td>超买做空 20 天后</td>
+<td>**+1.57%**（赚，胜率 61.9%）</td>
+<td>**−3.82%**（亏，胜率 27.1%）</td>
+</tr>
+<tr>
+<td>超买后继续涨概率</td>
+<td>38.1%</td>
+<td>**72.9%**</td>
+</tr>
+</tbody></table>
+
+<p><strong>震荡年做空超买是赚钱的，单边年做空超买是灾难。</strong></p>
+
+<p>全样本那个 −2.58%，是被后半段牛市拉出来的。所以"超买做空必亏"也不是规律，<strong>它是市场状态的产物</strong>。换个年份，结论会翻过来。</p>
+
+<p>这也是我这次最想说的一句：<strong>别把任何一条回测结论当教条，先看现在是什么市。</strong></p>
+
+<h2>周期越小，越没用</h2>
+
+<table class="priority-table"><thead><tr>
+<th>周期</th>
+<th>超买信号/年</th>
+<th>超买做空表现</th>
+<th>胜率</th>
+</tr></thead><tbody>
+<tr>
+<td>D1 日线</td>
+<td>15.0</td>
+<td>−0.585%（10 根后）</td>
+<td>43.3%</td>
+</tr>
+<tr>
+<td>H4 四小时</td>
+<td>74.1</td>
+<td>−0.014%</td>
+<td>48.6%</td>
+</tr>
+<tr>
+<td>H1 一小时</td>
+<td>131.3</td>
+<td>+0.022%</td>
+<td>53.1%</td>
+</tr>
+<tr>
+<td>M15 十五分</td>
+<td>137.1</td>
+<td>+0.269%</td>
+<td>65.1%</td>
+</tr>
+</tbody></table>
+
+<p>M15 那个 65% 胜率看着最漂亮，但平均幅度只有 <strong>0.07%</strong>，还不够付点差——而且那是 2020-2021 的旧数据。</p>
+
+<p>H4 有 420 次样本，−0.022%、胜率 48.3%，<strong>基本等于抛硬币</strong>。</p>
+
+<p><strong>响得越勤，越接近噪音。</strong> 用 H4 一年要响 110 次左右，用日线一年才 18 次。</p>
+
+<h2>扣掉成本之后</h2>
+
+<p>按点差往返 0.014%（约 0.3 美元/盎司 @4300）+ 隔夜费 0.015%/天 算：</p>
+
+<table class="priority-table"><thead><tr>
+<th>策略</th>
+<th>原始</th>
+<th>扣成本后</th>
+</tr></thead><tbody>
+<tr>
+<td>超买做空 20 天</td>
+<td>−2.58%</td>
+<td>**−2.89%**</td>
+</tr>
+<tr>
+<td>超卖做多 20 天</td>
+<td>+3.01%</td>
+<td>**+2.69%**</td>
+</tr>
+</tbody></table>
+
+<p><strong>超卖做多是唯一扛得住成本的。</strong> 短周期那 0.02% 的幅度，连往返点差都不够付——"噪音"这个判断被成本这一层坐实了。</p>
+
+<h2>那到底还能不能用</h2>
+
+<p>能用，但得换个用法。三条，都是数据说的：</p>
+
+<ol>
+<li><strong>RSI ≥ 70 别当"做空信号"，当"趋势强，别摸顶"。</strong> 你真要逆势，至少知道自己在跟 64.8% 的胜率对着干。</li>
+<li><strong>真正值得盯的是 ≤ 30 那一头</strong>（+3.01%、胜率 85%），但它<strong>很少响</strong>——六年日线 27 次，2024、2025 两个大牛年各 <strong>0 次</strong>。靠它抓买点，可能几个月等不到一次。</li>
+<li><strong>周期只用 D1 或 H4。</strong> M15/H1 一年响一两百次，实测零 alpha，是给自己找噪音。</li>
+</ol>
+<p>如果你打算写个 EA 专门提醒，记得把"≥70"的文案写成中性的（"超买，趋势强"），别写成"该空了"。</p>
+
+<h2>数据口径和局限（不写这段就是耍流氓）</h2>
+
+<ul>
+<li><strong>LBMA 是下午定盘价，一天一个价</strong>，不是你经纪商那个 24 小时连续报价，也不含点差。它是最权威的现货基准，但不是你的成交价。</li>
+<li><strong>成本是假设值</strong>（点差 0.3 美元、隔夜 0.015%/天），各经纪商差很多，你的实际成本可能更高。</li>
+<li><strong>样本外只有 2.7 年，且超卖在牛市段只出现 2 次</strong>——样本外对"超卖做多"这条基本没有验证力，它靠的是全样本和样本内。</li>
+<li><strong>H4/H1/M15 用的是 PAXG 代币代理</strong>（LBMA 只有日度数据），相对现货的标准差是 0.856%，短周期别当精确数字。</li>
+<li>全样本回看为主，不是严格的参数样本外检验。</li>
+<li>RSI 是 Wilder 平滑，与 MT4 原生 <code>iRSI</code> 逐根对过账（12,057 根，最大偏差 0.00005）。</li>
+</ul>
+<h2>自己复核</h2>
+
+<p>脚本都在，改参数就能重跑：</p>
+
+<ul>
+<li><code>_xau_rsi_study.py</code> — 主研究（多周期、钝化、频率）</li>
+<li><code>_xau_rsi_study2.py</code> — 分年度、穿越信号、趋势过滤</li>
+<li><code>_xau_accuracy_check.py</code> — 代理误差、现货重跑、样本外、成本敏感性</li>
+</ul>
+<p>数据源：<code>https://prices.lbma.org.uk/json/gold_pm.json</code>（免费，1968 年至今）。</p>
+
+<blockquote>归灯序不替你做判断。数据摆在这儿，超买之后是摸顶还是跟随，你自己定。我把结论能翻车的那部分也标出来了，免得你拿去当铁律。</blockquote>
+<p>></p>
+<blockquote>想看归灯序自己在跑的几条钱路（含实测到哪一步、单价多少）：[money.html](../money.html)</blockquote>
+
+        </div>
+        <div class="back-link">
+            <a href="../index.html">&larr; 回到归灯序首页</a>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <p>归灯序 &mdash; 不保证赚钱，但保证说实话</p>
+    </footer>
+</body>
+</html>
