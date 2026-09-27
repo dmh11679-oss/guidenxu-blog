@@ -187,7 +187,7 @@
     <script>
     (function(){
       try{
-        var key = encodeURIComponent(location.href.split('#')[0]);
+        var key = location.href.split('#')[0].replace(/^https?:\/\//, '');
         var img = new Image();
         img.src = 'https://hits.sh/' + key + '.svg?t=' + Date.now();
         img.alt = '访问量';
