@@ -18,5 +18,15 @@
   <p class="sub">对标「先进投研」同调性 · 归灯序出品 · 20秒竖屏</p>
   <video src="assets/jinju_final.mp4" poster="assets/jinju_poster.png" controls playsinline webkit-playsinline autoplay muted loop></video>
   <p class="tip">如不动，点一下播放键 · 这版是"差不多"同类型样片，不是1:1复制</p>
+  <p class="tip" id="hit">访问计数加载中…</p>
+  <script>
+    (function(){
+      var k = location.href.split('#')[0].replace(/^https?:\/\//,'');
+      var i = new Image();
+      i.onload = function(){ /* 计数已记 */ };
+      i.src = 'https://hits.sh/' + encodeURIComponent(k) + '.svg?t=' + Date.now();
+      document.getElementById('hit').textContent = '归灯序 · 真实访问计数已记录';
+    })();
+  </script>
 </body>
 </html>
