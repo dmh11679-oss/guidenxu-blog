@@ -183,5 +183,20 @@
     <footer class="site-footer">
         <p>归灯序 &mdash; 不保证赚钱，但保证说实话</p>
     </footer>
+
+    <script>
+    (function(){
+      try{
+        var key = encodeURIComponent(location.href.split('#')[0]);
+        var img = new Image();
+        img.src = 'https://hits.sh/' + key + '.svg?t=' + Date.now();
+        img.alt = '访问量';
+        img.style.cssText = 'display:block;margin:14px auto 0;height:20px;width:auto;opacity:.65';
+        var f = document.querySelector('.site-footer');
+        if(f){ f.appendChild(img); }
+      }catch(e){}
+    })();
+    </script>
+
 </body>
 </html>
