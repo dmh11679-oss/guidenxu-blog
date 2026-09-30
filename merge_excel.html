@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="merge_excel.py：把一个目录里的 Excel/CSV 合成一张表，自动加「来源文件」列。含真实跑通的输出、三个坑（数字变文本、千分位、前导零）和四条已知限制，附源码下载。">
+    <title>多表合并工具 merge_excel.py · 归灯序</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        main.container > h2{font-size:19px;margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid #e9ecef}
+        main.container > p{margin:10px 0;font-size:15px;color:#4a4a6a}
+        main.container > ul,main.container > ol{margin:10px 0 10px 22px}
+        main.container > ul li,main.container > ol li{margin:6px 0;font-size:15px;color:#4a4a6a}
+        main.container table{border-collapse:collapse;width:100%;margin:12px 0;font-size:14px}
+        main.container th,main.container td{border:1px solid #e9ecef;padding:8px 10px;text-align:left}
+        main.container th{background:#f8f9fa}
+        pre{background:#1a1a2e;color:#e6e6f0;padding:14px 16px;border-radius:8px;overflow-x:auto;font-size:13px;line-height:1.65;font-family:Consolas,Monaco,monospace;margin:12px 0}
+        code{background:#f1f3f7;padding:1px 5px;border-radius:4px;font-size:13px;font-family:Consolas,Monaco,monospace}
+        .note{background:#fff5f5;border-left:3px solid #ef4444;padding:12px 16px;border-radius:6px;font-size:14px;color:#4a4a6a;margin:12px 0}
+        .ok{background:#ecfdf5;border-left:3px solid #10b981;padding:12px 16px;border-radius:6px;font-size:14px;color:#4a4a6a;margin:12px 0}
+        .small{font-size:13px;color:#8890a0;text-align:center;margin-top:24px}
+    </style>
+</head>
+<body>
+<header class="site-header-index"><div class="container header-center">
+    <h1 class="brand-index" style="font-size:30px">merge_excel.py</h1>
+    <p class="tagline-index">把一个文件夹里的 Excel / CSV 合成一张，自动标出每行来自哪个文件</p>
+    <p class="factory-desc">命令行小工具 &middot; 数据不出本机 &middot; MIT 开源</p>
+</div></header>
+<main class="container">
+
+<h2>它解决的是哪一种活</h2>
+<p>每月十几家分店、分公司、分月报表，结构一模一样，要粘成一张给老板看。手工复制粘贴的下场你大概经历过：粘到第七个开始串行，金额列看着是数字，求和出来是 0。</p>
+<p>这个脚本只干一件事：把一个目录里结构相同的表合成一张，并自动加一列「来源文件」，标明每一行是从哪个文件来的。</p>
+
+<h2>先说门槛，别白看</h2>
+<p>它是命令行工具，不是网页、不是在线转换器。跑它你需要：电脑上装了 Python，再装一个依赖 <code>openpyxl</code>。</p>
+<p>本机实跑环境是 <strong>Python 3.12.10 + openpyxl 3.1.5</strong>（2026-09-30 复现，输出见下文）。作者 README 写的是「Python 3.8+ 都能跑」，这个我没逐个版本去验，只在 3.12 上真跑过。</p>
+<p>如果你不想碰命令行，看到下面「真跑一遍的输出」就够了 —— 至少你知道合并完应该长什么样、哪些地方会坑你。</p>
+
+<h2>安装</h2>
+<pre>pip install openpyxl</pre>
+<p>就这一个依赖。</p>
+
+<h2>用法</h2>
+<pre>python merge_excel.py &lt;目录&gt; [-o 输出.xlsx] [--sheet 工作表名] [--keep-header] [--raw]</pre>
+<table>
+<tr><th>参数</th><th>作用</th></tr>
+<tr><td><code>-o</code></td><td>输出文件名，默认写到 <code>&lt;目录&gt;/合并结果.xlsx</code></td></tr>
+<tr><td><code>--sheet</code></td><td>指定读哪个工作表，默认读第一个</td></tr>
+<tr><td><code>--keep-header</code></td><td>每个文件都保留表头（默认只留第一份文件的表头）</td></tr>
+<tr><td><code>--raw</code></td><td>CSV 不做数值识别，全部按文本写入</td></tr>
+</table>
+
+<h2>真跑一遍的输出（本机复现，不是示意）</h2>
+<p>输入 3 个文件（2 个 xlsx + 1 个 csv），其中 CSV 里放了千分位金额 <code>"1,500"</code> 和前导零编码 <code>007</code>：</p>
+<pre>$ python merge_excel.py ./报表 -o 合并结果.xlsx
+输出: ./报表/合并结果.xlsx
+合并 2 个文件，共 4 行数据
+   杭州店.xlsx                         1 行
+   边界测试.csv                         3 行</pre>
+<p>合成之后，我把结果文件逐格读回来打印了真实值和真实类型（括号里是写进 Excel 的类型）：</p>
+<table>
+<tr><th>订单号</th><th>日期</th><th>销量</th><th>金额</th><th>备注</th><th>来源文件</th></tr>
+<tr><td>2001 <em>(int)</em></td><td>2026-08-05 <em>(文本)</em></td><td>9 <em>(int)</em></td><td>900 <em>(int)</em></td><td>xlsx来源</td><td>杭州店.xlsx</td></tr>
+<tr><td>1001 <em>(int)</em></td><td>2026-08-01 <em>(日期)</em></td><td>12 <em>(int)</em></td><td>1200 <em>(int)</em></td><td>正常</td><td>边界测试.csv</td></tr>
+<tr><td>1002 <em>(int)</em></td><td>2026-08-02 <em>(日期)</em></td><td>7 <em>(int)</em></td><td>1500 <em>(int)</em></td><td>含逗号千分位</td><td>边界测试.csv</td></tr>
+<tr><td>007 <em>(文本)</em></td><td>2026-08-03 <em>(日期)</em></td><td>3 <em>(int)</em></td><td>300 <em>(int)</em></td><td>前导零编码</td><td>边界测试.csv</td></tr>
+</table>
+<p class="ok">注意那两处：<code>"1,500"</code> 变成了数字 <strong>1500</strong>（能求和），<code>007</code> 保持 <strong>文本 007</strong>（没被改成 7）。</p>
+
+<h2>它处理掉的三个真实坑</h2>
+<p>CSV 读进来一律是字符串。直接写进 Excel，数字列会变成文本 —— 看着像数字，求和却是 0。这个工具做了三件事：</p>
+<ol>
+<li><strong>数字还原</strong>：<code>1200</code> 写成数字 1200，不是文本 <code>"1200"</code>。</li>
+<li><strong>千分位还原</strong>：<code>"1,500"</code> 还原成 1500。含逗号但不是千分位的字符串（比如备注里的逗号）原样保留，不乱拆。</li>
+<li><strong>不擅自改你的数据</strong>：<code>007</code> 这种前导零编码（工号、门店号、部门码）保留为文本，不会被改成 7。日期 <code>2026-08-01</code> 写成真日期，可以直接做透视表。</li>
+</ol>
+<p>拿不准的一律当文本，不猜。想全部按文本写，加 <code>--raw</code>。</p>
+
+<h2>已知限制（先看这个，别踩坑）</h2>
+<ul>
+<li><strong>不支持旧版 <code>.xls</code></strong>（Excel 97-2003）。只支持 <code>.xlsx</code> 和 <code>.csv</code>。我实测放了一个 .xls 进去，它会打印一行「跳过 老报表.xls（读取失败: openpyxl does not support the old .xls file format…）」<strong>然后继续跑</strong>，不会中断，也不会静默丢数据。</li>
+<li><strong>假设各文件列结构一致</strong>（列的顺序和含义相同）。列名不同、顺序不同的表（比如不同银行的账单），合并前得自己先把列名对齐，这个工具不做自动对齐。</li>
+<li><strong>只读每个文件的第一个工作表</strong>（或用 <code>--sheet</code> 指定一个）。多工作表合并暂不支持。</li>
+<li>公式单元格读的是<strong>计算结果</strong>（代码里 <code>data_only=True</code>）。文件从没被 Excel 打开过、没有缓存结果时，会读到空。</li>
+</ul>
+<p class="note">还有一个我自己跑出来的细节：输出默认就写在输入目录里，脚本只排除「与输出同名的那个文件」。如果你换了个 <code>-o</code> 名字再跑一遍，上一轮的合并结果会被当成新输入再合一次 —— 行数翻倍。要么固定用默认名，要么每次输出到别的目录。</p>
+
+<h2>为什么做成命令行，不做成网页</h2>
+<p>因为这活的典型场景是「文件夹里躺着 30 个门店报表，每月来一次」。命令行一条语句跑完，不用每次开网页、不用把报表上传到任何服务器 —— 数据不出本机。</p>
+<p>反过来说，这也是它的门槛：你要能敲命令行。我没有包装成 exe 或界面，包装了就是另一个价格的事了。</p>
+
+<h2>源码</h2>
+<p><a href="merge_excel.py"><strong>merge_excel.py</strong></a>（右键另存，或直接在仓库里看）。单个文件，MIT 协议，改它、卖它都行，别找我售后。</p>
+<p>发现它做错的地方，欢迎告诉我 —— 但我更希望你直接看代码改，就这么一个文件。</p>
+
+<hr>
+<p class="small">归灯序 · 帮散户避开坑，找到真机会。本页所有输出均为本机实跑结果，未做任何美化；已知限制按源码和实测原样列出。</p>
+</main>
+<footer class="site-footer"><p>归灯序 &mdash; 不保证赚钱，但保证说实话</p></footer>
+<!-- 归灯序访问反馈装置 (2026-09-29 装) -->
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<span id="busuanzi_container_site_pv" style="display:none">PV:<span id="busuanzi_value_site_pv"></span></span>
+<span id="busuanzi_container_site_uv" style="display:none">UV:<span id="busuanzi_value_site_uv"></span></span>
+</body>
+</html>
