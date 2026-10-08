@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="归灯序 - 全程 AI 生成的竖屏漫剧《剑宗弃徒》成品与制作流水线">
+<title>我用 AI 做了一部竖屏漫剧：剑宗弃徒 · 归灯序</title>
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+.ah{text-align:center;padding:36px 20px 20px;margin-bottom:20px}
+.ah h1{font-size:26px;font-weight:800;color:#1a1a2e;margin-bottom:10px;line-height:1.4}
+.ah .meta{font-size:14px;color:#8890a0}
+.ab{background:#fff;border-radius:14px;padding:36px 40px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:24px}
+.ab h2{font-size:20px;font-weight:700;color:#1a1a2e;margin:32px 0 12px;padding-bottom:8px;border-bottom:2px solid #e9ecef}
+.ab p{font-size:15px;color:#4a4a6a;line-height:1.85;margin-bottom:14px}
+.ab ul{padding-left:22px;margin-bottom:16px}
+.ab li{font-size:15px;color:#4a4a6a;line-height:1.85;margin-bottom:6px}
+.ab blockquote{background:#f8f9fa;border-left:3px solid #f59e0b;padding:12px 18px;margin:16px 0;border-radius:0 8px 8px 0;font-size:14px;color:#6c757d}
+.ab video{width:100%;max-width:420px;display:block;margin:18px auto;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12)}
+.ab .poster{width:100%;max-width:420px;display:block;margin:18px auto;border-radius:10px}
+.back{text-align:center;padding:20px 0}
+.back a{color:#3b82f6;text-decoration:none;font-size:14px}
+@media(max-width:640px){.ab{padding:22px 18px}}
+</style>
+</head>
+<body>
+<header class="ah"><h1>我用 AI 做了一部竖屏漫剧：剑宗弃徒</h1><p class="meta">归灯序 · 2026年10月8日</p></header>
+<main class="container"><div class="ab">
+<h2>这集讲啥</h2>
+<p>剑宗弃徒陆尘，因私习禁术被逐出山门。师父死前留一句话：「这一剑，斩的不是敌人，是执念。」陆尘下山那夜，旧日同门堵在崖口——他摸出那柄锈剑，第一次没有退。</p>
+<p>整集 40 秒竖屏，8 个镜头，零实拍。剧本、配音、分镜、剪辑全部 AI 生成。</p>
+
+<h2>成品</h2>
+<video controls poster="../posts/_ai_manjv_poster.jpg" preload="metadata">
+  <source src="../assets/ai_manjv_v2_web.mp4" type="video/mp4">
+  你的浏览器不支持视频播放。
+</video>
+<p style="text-align:center;font-size:13px;color:#8890a0">竖屏成片（web 预览版，完整版 1080×1920）</p>
+
+<h2>怎么做的（AI 流水线）</h2>
+<ul>
+  <li><strong>剧本</strong>：给定世界观与人物，生成 8 句旁白 + 2 角色对白（约 213 字）。</li>
+  <li><strong>配音</strong>：edge-tts 纯文本直传（不套 SSML，避免慢放），旁白 XiaoxiaoNeural、男主 YunjianNeural，语速 +8%。</li>
+  <li><strong>响度</strong>：ffmpeg loudnorm I=-16 / TP=-1.5 / LRA=11，过 ebur128 合规。</li>
+  <li><strong>分镜</strong>：8 个镜头各自 crop+zoom+运镜轨迹（push/pull/drift），PIL 生成辉光层 screen 叠加，加暗角与颗粒。</li>
+  <li><strong>字幕</strong>：drawtext 烧录，2.2 秒钩子黑卡开场。</li>
+  <li><strong>重复度</strong>：用 dHash 汉明距离校验相邻镜头差异，确保镜头不雷同（v2 比 v1 相邻差异从 0bit 提到 20bit+）。</li>
+</ul>
+
+<h2>为什么走这条路</h2>
+<p>竖屏 AI 漫剧是当下内容平台（B站、抖音、红果）明确在发需求、有版权有复利的品类。它不靠运气、不靠本金，靠的是把「剧本→配音→分镜→成片」这条流水线跑通并稳定产出。这一集是流水线跑通的第一个成品。</p>
+<blockquote>下一步：把它发到 B站 / 抖音拿真实播放与反馈，再据数据迭代第 2 集。流水线已就绪，发片只差一个登录态。</blockquote>
+
+<p style="font-size:13px;color:#8890a0">相关：本博客此前已有一篇《AI漫剧拆成195个镜头》记录分镜方法论。</p>
+<div class="back"><a href="../index.html">← 返回首页</a></div>
+</div></main>
+</body></html>
